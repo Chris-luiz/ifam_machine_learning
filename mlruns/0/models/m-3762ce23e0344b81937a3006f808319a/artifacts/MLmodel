@@ -1,0 +1,370 @@
+artifact_path: /var/www/html/projeto_ifam/mlruns/0/models/m-3762ce23e0344b81937a3006f808319a/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.12
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.9.0
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.13.0
+model_id: m-3762ce23e0344b81937a3006f808319a
+model_size_bytes: 375839
+model_uuid: m-3762ce23e0344b81937a3006f808319a
+prompts: null
+run_id: 349a0c92f20c4fcbaebf7ff4ea4d8364
+signature:
+  inputs: '[{"type": "double", "name": "taxa_atraso_categoria", "required": true},
+    {"type": "double", "name": "distancia_km", "required": true}, {"type": "long",
+    "name": "dias_estimados_logistica", "required": true}, {"type": "integer", "name":
+    "dia_semana_estimado", "required": true}, {"type": "integer", "name": "mes_compra",
+    "required": true}, {"type": "integer", "name": "dia_semana_compra", "required":
+    true}, {"type": "long", "name": "mesmo_estado", "required": true}, {"type": "integer",
+    "name": "hora_compra", "required": true}, {"type": "double", "name": "price",
+    "required": true}, {"type": "double", "name": "freight_value", "required": true},
+    {"type": "long", "name": "qtde_itens", "required": true}, {"type": "long", "name":
+    "qtde_produtos", "required": true}, {"type": "long", "name": "qtde_vendedores",
+    "required": true}, {"type": "double", "name": "product_weight_g", "required":
+    true}, {"type": "double", "name": "product_length_cm", "required": true}, {"type":
+    "double", "name": "product_height_cm", "required": true}, {"type": "double", "name":
+    "product_width_cm", "required": true}, {"type": "double", "name": "payment_value",
+    "required": true}, {"type": "long", "name": "payment_installments", "required":
+    true}, {"type": "long", "name": "payment_sequential", "required": true}, {"type":
+    "long", "name": "boleto", "required": true}, {"type": "long", "name": "credit_card",
+    "required": true}, {"type": "long", "name": "voucher", "required": true}, {"type":
+    "long", "name": "debit_card", "required": true}, {"type": "integer", "name": "customer_state_AC",
+    "required": true}, {"type": "integer", "name": "customer_state_AL", "required":
+    true}, {"type": "integer", "name": "customer_state_AM", "required": true}, {"type":
+    "integer", "name": "customer_state_AP", "required": true}, {"type": "integer",
+    "name": "customer_state_BA", "required": true}, {"type": "integer", "name": "customer_state_CE",
+    "required": true}, {"type": "integer", "name": "customer_state_DF", "required":
+    true}, {"type": "integer", "name": "customer_state_ES", "required": true}, {"type":
+    "integer", "name": "customer_state_GO", "required": true}, {"type": "integer",
+    "name": "customer_state_MA", "required": true}, {"type": "integer", "name": "customer_state_MG",
+    "required": true}, {"type": "integer", "name": "customer_state_MS", "required":
+    true}, {"type": "integer", "name": "customer_state_MT", "required": true}, {"type":
+    "integer", "name": "customer_state_PA", "required": true}, {"type": "integer",
+    "name": "customer_state_PB", "required": true}, {"type": "integer", "name": "customer_state_PE",
+    "required": true}, {"type": "integer", "name": "customer_state_PI", "required":
+    true}, {"type": "integer", "name": "customer_state_PR", "required": true}, {"type":
+    "integer", "name": "customer_state_RJ", "required": true}, {"type": "integer",
+    "name": "customer_state_RN", "required": true}, {"type": "integer", "name": "customer_state_RO",
+    "required": true}, {"type": "integer", "name": "customer_state_RR", "required":
+    true}, {"type": "integer", "name": "customer_state_RS", "required": true}, {"type":
+    "integer", "name": "customer_state_SC", "required": true}, {"type": "integer",
+    "name": "customer_state_SE", "required": true}, {"type": "integer", "name": "customer_state_SP",
+    "required": true}, {"type": "integer", "name": "customer_state_TO", "required":
+    true}, {"type": "integer", "name": "seller_state_AM", "required": true}, {"type":
+    "integer", "name": "seller_state_BA", "required": true}, {"type": "integer", "name":
+    "seller_state_CE", "required": true}, {"type": "integer", "name": "seller_state_DF",
+    "required": true}, {"type": "integer", "name": "seller_state_ES", "required":
+    true}, {"type": "integer", "name": "seller_state_GO", "required": true}, {"type":
+    "integer", "name": "seller_state_MA", "required": true}, {"type": "integer", "name":
+    "seller_state_MG", "required": true}, {"type": "integer", "name": "seller_state_MS",
+    "required": true}, {"type": "integer", "name": "seller_state_MT", "required":
+    true}, {"type": "integer", "name": "seller_state_PA", "required": true}, {"type":
+    "integer", "name": "seller_state_PB", "required": true}, {"type": "integer", "name":
+    "seller_state_PE", "required": true}, {"type": "integer", "name": "seller_state_PI",
+    "required": true}, {"type": "integer", "name": "seller_state_PR", "required":
+    true}, {"type": "integer", "name": "seller_state_RJ", "required": true}, {"type":
+    "integer", "name": "seller_state_RN", "required": true}, {"type": "integer", "name":
+    "seller_state_RO", "required": true}, {"type": "integer", "name": "seller_state_RS",
+    "required": true}, {"type": "integer", "name": "seller_state_SC", "required":
+    true}, {"type": "integer", "name": "seller_state_SE", "required": true}, {"type":
+    "integer", "name": "seller_state_SP", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_AM_MA", "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_AL",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_AM", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_BA_AP", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_BA_BA", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_BA_CE", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_BA_DF", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_BA_ES", "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_GO",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_MA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_BA_MG", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_BA_MT", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_BA_PA", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_BA_PB", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_BA_PE", "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_PI",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_PR", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_BA_RJ", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_BA_RN", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_BA_RS", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_BA_SC", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_BA_SE", "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_SP",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_BA_TO", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_CE_BA", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_CE_CE", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_CE_MA", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_CE_MG", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_CE_MS", "required": true}, {"type": "integer", "name": "fluxo_logistico_CE_PA",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_CE_PE", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_CE_PI", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_CE_RJ", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_CE_SC", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_CE_SE", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_CE_SP", "required": true}, {"type": "integer", "name": "fluxo_logistico_DF_AL",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_DF_BA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_DF_CE", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_DF_DF", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_DF_ES", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_DF_GO", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_DF_MA", "required": true}, {"type": "integer", "name": "fluxo_logistico_DF_MG",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_DF_MS", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_DF_MT", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_DF_PA", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_DF_PB", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_DF_PE", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_DF_PI", "required": true}, {"type": "integer", "name": "fluxo_logistico_DF_PR",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_DF_RJ", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_DF_RN", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_DF_RS", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_DF_SC", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_DF_SP", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_DF_TO", "required": true}, {"type": "integer", "name": "fluxo_logistico_ES_BA",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_ES_DF", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_ES_ES", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_ES_GO", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_ES_MG", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_ES_MT", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_ES_PE", "required": true}, {"type": "integer", "name": "fluxo_logistico_ES_PI",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_ES_PR", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_ES_RJ", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_ES_RS", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_ES_SC", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_ES_SP", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_GO_AL", "required": true}, {"type": "integer", "name": "fluxo_logistico_GO_AM",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_GO_CE", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_GO_DF", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_GO_ES", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_GO_GO", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_GO_MA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_GO_MG", "required": true}, {"type": "integer", "name": "fluxo_logistico_GO_MS",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_GO_MT", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_GO_PA", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_GO_PB", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_GO_PE", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_GO_PI", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_GO_RJ", "required": true}, {"type": "integer", "name": "fluxo_logistico_GO_RO",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_GO_RS", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_GO_SC", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_GO_SP", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_GO_TO", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MA_AC", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MA_AL", "required": true}, {"type": "integer", "name": "fluxo_logistico_MA_AP",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MA_CE", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MA_DF", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MA_ES", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MA_GO", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MA_MA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MA_MG", "required": true}, {"type": "integer", "name": "fluxo_logistico_MA_MS",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MA_MT", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MA_PA", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MA_PB", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MA_PE", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MA_PI", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MA_PR", "required": true}, {"type": "integer", "name": "fluxo_logistico_MA_RJ",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MA_RS", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MA_SC", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MA_SE", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MA_SP", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MA_TO", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MG_AC", "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_AL",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_AM", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MG_AP", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MG_BA", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MG_CE", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MG_DF", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MG_ES", "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_GO",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_MA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MG_MG", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MG_MS", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MG_MT", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MG_PA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MG_PB", "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_PE",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_PI", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MG_PR", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MG_RJ", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MG_RN", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MG_RO", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MG_RS", "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_SC",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MG_SE", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MG_SP", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MG_TO", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MS_BA", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MS_MT", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MS_RJ", "required": true}, {"type": "integer", "name": "fluxo_logistico_MS_SP",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MT_BA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MT_DF", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MT_ES", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MT_GO", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MT_MG", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MT_MS", "required": true}, {"type": "integer", "name": "fluxo_logistico_MT_MT",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MT_PA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_MT_PE", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_MT_PR", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_MT_RJ", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_MT_RN", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_MT_RS", "required": true}, {"type": "integer", "name": "fluxo_logistico_MT_SC",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_MT_SP", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PA_MG", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PA_PR", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PB_AL", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PB_BA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PB_CE", "required": true}, {"type": "integer", "name": "fluxo_logistico_PB_DF",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PB_RJ", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PB_SE", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PB_SP", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PE_AL", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PE_BA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PE_CE", "required": true}, {"type": "integer", "name": "fluxo_logistico_PE_DF",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PE_ES", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PE_GO", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PE_MA", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PE_MG", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PE_PA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PE_PB", "required": true}, {"type": "integer", "name": "fluxo_logistico_PE_PE",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PE_PI", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PE_PR", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PE_RJ", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PE_RN", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PE_RS", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PE_SC", "required": true}, {"type": "integer", "name": "fluxo_logistico_PE_SE",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PE_SP", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PI_CE", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PI_PI", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PI_SC", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PR_AC", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PR_AL", "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_AM",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_BA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PR_CE", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PR_DF", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PR_ES", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PR_GO", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PR_MA", "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_MG",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_MS", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PR_MT", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PR_PA", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PR_PB", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PR_PE", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PR_PI", "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_PR",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_RJ", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PR_RN", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_PR_RO", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_PR_RR", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_PR_RS", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_PR_SC", "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_SE",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_PR_SP", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_PR_TO", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RJ_AL", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RJ_AM", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RJ_AP", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RJ_BA", "required": true}, {"type": "integer", "name": "fluxo_logistico_RJ_CE",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RJ_DF", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RJ_ES", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RJ_GO", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RJ_MA", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RJ_MG", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RJ_MS", "required": true}, {"type": "integer", "name": "fluxo_logistico_RJ_MT",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RJ_PA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RJ_PB", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RJ_PE", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RJ_PI", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RJ_PR", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RJ_RJ", "required": true}, {"type": "integer", "name": "fluxo_logistico_RJ_RN",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RJ_RO", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RJ_RS", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RJ_SC", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RJ_SE", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RJ_SP", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RJ_TO", "required": true}, {"type": "integer", "name": "fluxo_logistico_RN_AL",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RN_BA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RN_CE", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RN_MG", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RN_PB", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RN_PR", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RN_RJ", "required": true}, {"type": "integer", "name": "fluxo_logistico_RN_RN",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RN_RS", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RN_SP", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RO_ES", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RO_PR", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RO_SP", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RS_AC", "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_AL",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_AM", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RS_AP", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RS_BA", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RS_CE", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RS_DF", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RS_ES", "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_GO",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_MA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RS_MG", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RS_MS", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RS_MT", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RS_PA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RS_PB", "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_PE",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_PI", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RS_PR", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RS_RJ", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_RS_RN", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_RS_RO", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_RS_RS", "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_SC",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_RS_SE", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_RS_SP", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_RS_TO", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SC_AC", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SC_AL", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SC_AM", "required": true}, {"type": "integer", "name": "fluxo_logistico_SC_BA",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_SC_CE", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_SC_DF", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_SC_ES", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SC_GO", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SC_MA", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SC_MG", "required": true}, {"type": "integer", "name": "fluxo_logistico_SC_MS",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_SC_MT", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_SC_PA", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_SC_PB", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SC_PE", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SC_PI", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SC_PR", "required": true}, {"type": "integer", "name": "fluxo_logistico_SC_RJ",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_SC_RN", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_SC_RO", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_SC_RS", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SC_SC", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SC_SE", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SC_SP", "required": true}, {"type": "integer", "name": "fluxo_logistico_SC_TO",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_SE_GO", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_SP_AC", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_SP_AL", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SP_AM", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SP_AP", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SP_BA", "required": true}, {"type": "integer", "name": "fluxo_logistico_SP_CE",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_SP_DF", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_SP_ES", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_SP_GO", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SP_MA", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SP_MG", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SP_MS", "required": true}, {"type": "integer", "name": "fluxo_logistico_SP_MT",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_SP_PA", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_SP_PB", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_SP_PE", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SP_PI", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SP_PR", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SP_RJ", "required": true}, {"type": "integer", "name": "fluxo_logistico_SP_RN",
+    "required": true}, {"type": "integer", "name": "fluxo_logistico_SP_RO", "required":
+    true}, {"type": "integer", "name": "fluxo_logistico_SP_RR", "required": true},
+    {"type": "integer", "name": "fluxo_logistico_SP_RS", "required": true}, {"type":
+    "integer", "name": "fluxo_logistico_SP_SC", "required": true}, {"type": "integer",
+    "name": "fluxo_logistico_SP_SE", "required": true}, {"type": "integer", "name":
+    "fluxo_logistico_SP_SP", "required": true}, {"type": "integer", "name": "fluxo_logistico_SP_TO",
+    "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-06-08 05:12:34.442138'

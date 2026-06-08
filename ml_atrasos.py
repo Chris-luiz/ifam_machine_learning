@@ -225,10 +225,38 @@ features = [
     "debit_card"
 ] + colunas_estados_customer + colunas_estados_seller + colunas_fluxo
 
-X = orders_df[features]
-y = orders_df['atrasou']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+# tamanho_total = len(orders_df)
+# corte = int(tamanho_total * 0.85)
+
+# X_train = X.iloc[:corte]
+# y_train = y.iloc[:corte]
+
+# X_test = X.iloc[corte:]
+# y_test = y.iloc[corte:]
+
+# df_treino_export = X_train.copy()
+# df_treino_export['alvo_real_atrasou'] = y_train
+# df_treino_export.to_csv("datasets/dados_treinamento_IA.csv", index=False)
+# print("-> CSV de Treinamento exportado (dados_treinamento_IA.csv).")
+
+# df_holdout_export = X_test.copy()
+# df_holdout_export['alvo_real_atrasou'] = y_test
+# df_holdout_export.to_csv("datasets/holdout_test_django.csv", index=False)
+# print("-> CSV de Teste Holdout exportado (holdout_test_django.csv).")
+
+
+PROD_TREINO_PATH = '/datasets/prod/treino.csv'
+PROD_TEST_PATH = '/datasets/prod/test.csv'
+
+prod_dataset = pd.read_csv(PROD_TREINO_PATH)
+# y_validation = pd.read_csv(PROD_TEST_PATH)
+X = prod_dataset[features]
+y = prod_dataset['atrasou']
+
+
+
+X_train, X_test, y_train, y_test = train_test_split(prod_dataset, y, random_state=42)
 
 pipeline = Pipeline([
     ('under_sampling', RandomUnderSampler(random_state=42)),

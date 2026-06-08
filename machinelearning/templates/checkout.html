@@ -1,24 +1,20 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Amazon Clone Checkout - IFAM IA</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .amazon-border { border: 1px solid #ddd; border-radius: 8px; }
-        .btn-amazon { background-color: #ffd814; border-color: #fcd200; color: #0f1111; }
-        .btn-amazon:hover { background-color: #f7ca00; border-color: #f2c200; }
-        .bg-amazon-header { background-color: #232f3e; }
-        .json-payload { background-color: #1e1e1e; color: #75beff; font-family: 'Courier New', Courier, monospace; padding: 15px; border-radius: 6px; }
-    </style>
-</head>
-<body class="bg-light">
+{% extends 'base.html' %}
 
-<nav class="navbar navbar-dark bg-amazon-header mb-4 shadow-sm">
-    <div class="container">
-        <span class="navbar-brand mb-0 h1">🛒 amazon<span class="text-warning" style="font-size:14px;">.ifam</span></span>
-        <a href="{% url 'vitrine' %}" class="btn btn-sm btn-outline-light">Voltar às compras</a>
-    </div>
+{% block title %}Amazon Clone Checkout - IFAM IA{% endblock %}
+{% block nav_checkout %}active{% endblock %}
+
+{% block extra_css %}
+    .amazon-border { border: 1px solid #ddd; border-radius: 8px; }
+    .btn-amazon { background-color: #ffd814; border-color: #fcd200; color: #0f1111; }
+    .btn-amazon:hover { background-color: #f7ca00; border-color: #f2c200; }
+    .bg-amazon-header { background-color: #232f3e; }
+    .json-payload { background-color: #1e1e1e; color: #75beff; font-family: 'Courier New', Courier, monospace; padding: 15px; border-radius: 6px; }
+{% endblock %}
+
+{% block content %}
+<nav class="navbar navbar-dark bg-amazon-header mb-4 shadow-sm px-4">
+    <span class="navbar-brand mb-0 h1">🛒 amazon<span class="text-warning" style="font-size:14px;">.ifam</span></span>
+    <a href="{% url 'vitrine' %}" class="btn btn-sm btn-outline-light">Voltar às compras</a>
 </nav>
 
 <div class="container pb-5">
@@ -54,7 +50,7 @@
     </div>
 
     <div id="painel-inspector" class="card p-4 mb-4 border-dark bg-dark text-white shadow" style="display: none;">
-        <h5 class="text-warning border-bottom border-secondary pb-2">📋 Dados Estruturados que serão Enviados para o Backend/Modelo:</h5>
+        <h5 class="text-warning border-bottom border-secondary pb-2">📋 Dados Estruturados que serão Enviados:</h5>
         <p class="small text-muted mb-3">Estes dados serão mapeados no formato One-Hot Encoding dentro do seu Pipeline do Scikit-Learn.</p>
         <pre id="json-output" class="json-payload mb-0"></pre>
     </div>
@@ -122,7 +118,7 @@
                         <div>
                             <span class="badge bg-dark mb-1">{{ produto.product_category_name }}</span>
                             <h6 class="mb-1 text-truncate" style="max-width: 400px;">Produto ID: {{ produto.product_id }}</h6>
-                            <small class="text-muted">Enviado por vendedor de: <strong>{{ produto.seller_state }}</strong> | Peso: {{ produto.product_weight_g }}g</small>
+                            <small class="text-muted">Origem: <strong>{{ produto.seller_state }}</strong> | Peso: {{ produto.product_weight_g }}g</small>
                         </div>
                         <span class="h5 text-dark">R$ {{ produto.price }}</span>
                     </div>
@@ -148,7 +144,7 @@
                 </div>
                 <hr>
                 <div class="d-flex justify-content-between mb-4">
-                    <h4 class="text-danger fw-bold">Total do pedido:</h4>
+                    <h4 class="text-danger fw-bold">Total:</h4>
                     <h4 class="text-danger fw-bold">R$ {{ total_pedido }}</h4>
                 </div>
 
@@ -157,14 +153,16 @@
                 </button>
                 <p class="text-muted text-center mt-3" style="font-size: 11px;">Ao confirmar, os dados geográficos e logísticos serão submetidos ao classificador Gradient Boosting.</p>
             </div>
-            </form> </div>
+            </form>
+        </div>
     </div>
     {% endif %}
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
     function atualizarPayload() {
-        // Dados capturados estaticamente do Django e dinamicamente do formulário do Usuário
         const payload = {
             "informacoes_produto": {
                 "product_id": "{{ produto.product_id }}",
@@ -188,9 +186,9 @@
                 "payment_value_total": parseFloat("{{ total_pedido|default:produto.price }}")
             }
         };
-
-        // Renderiza o JSON bonito e identado dentro da tag <pre>
-        document.getElementById('json-output').textContent = JSON.stringify(payload, null, 4);
+        if(document.getElementById('json-output')) {
+            document.getElementById('json-output').textContent = JSON.stringify(payload, null, 4);
+        }
     }
 
     function toggleInspector() {
@@ -198,7 +196,7 @@
         const botaoTexto = document.getElementById('texto-btn-inspector');
         
         if (painel.style.display === 'none') {
-            atualizarPayload(); // Atualiza antes de mostrar
+            atualizarPayload();
             painel.style.display = 'block';
             botaoTexto.textContent = 'Esconder';
         } else {
@@ -207,13 +205,10 @@
         }
     }
 
-    // Roda automaticamente caso o usuário mude alguma coisa em tempo de execução
     window.onload = function() {
         if(document.getElementById('input_endereco')) {
             document.getElementById('input_endereco').addEventListener('input', atualizarPayload);
         }
     };
 </script>
-
-</body>
-</html>
+{% endblock %}

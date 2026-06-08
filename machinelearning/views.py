@@ -5,6 +5,10 @@ from django.shortcuts import render, redirect
 from django.conf import settings
 from geopy.distance import geodesic
 import datetime
+from django.http import JsonResponse
+import json
+import numpy as np
+from django.views.decorators.csrf import csrf_exempt
 
 MODEL_PATH = os.path.join(settings.BASE_DIR, 'machinelearning', 'ml_models', 'ml_classifcador_atrasos.pkl')
 DATASET_DIR = os.path.join(settings.BASE_DIR, 'datasets')
@@ -188,3 +192,166 @@ def checkout_view(request):
         contexto['probabilidade'] = round(probabilidade * 100, 1)
         
     return render(request, 'checkout.html', contexto)
+
+
+def pipeline_engenharia_atributos(df_base):
+    """
+    Recria o pipeline de tratamento de dados do modelo para o CSV submetido.
+    Transforma dados brutos nas features exatas que a IA espera.
+    """
+    df = df_base.copy()
+    
+    # Tratamentos básicos de tipos temporais
+    if 'order_delivered_customer_date' in df.columns:
+        df['order_delivered_customer_date'] = pd.to_datetime(df['order_delivered_customer_date'], errors='coerce')
+    if 'order_estimated_delivery_date' in df.columns:
+        df['order_estimated_delivery_date'] = pd.to_datetime(df['order_estimated_delivery_date'], errors='coerce')
+    if 'order_purchase_timestamp' in df.columns:
+        df["order_purchase_timestamp"] = pd.to_datetime(df["order_purchase_timestamp"], errors='coerce')
+    
+    # Preenchimento de lat/lng ausentes
+    for col in ['lat_customer', 'lng_customer', 'lat_seller', 'lng_seller']:
+        if col in df.columns:
+            df[col] = df[col].fillna(df[col].mean() if pd.notna(df[col].mean()) else 0)
+            
+    # Cálculo de distância geodésica
+    if all(c in df.columns for c in ['lat_customer', 'lng_customer', 'lat_seller', 'lng_seller']) and 'distancia_km' not in df.columns:
+        def calcular_distancia_km(row):
+            try:
+                return geodesic((row['lat_customer'], row['lng_customer']), (row['lat_seller'], row['lng_seller'])).km
+            except:
+                return 0.0
+        df['distancia_km'] = df.apply(calcular_distancia_km, axis=1)
+    elif 'distancia_km' not in df.columns:
+        df['distancia_km'] = 0.0
+
+    # Criação das features temporais
+    if 'atrasou' not in df.columns and 'order_delivered_customer_date' in df.columns:
+        df["atrasou"] = (df["order_delivered_customer_date"] > df["order_estimated_delivery_date"]).astype(int)
+    
+    if "order_estimated_delivery_date" in df.columns and "order_purchase_timestamp" in df.columns:
+        df["dias_estimados_logistica"] = (df["order_estimated_delivery_date"] - df["order_purchase_timestamp"]).dt.days
+        df["dia_semana_estimado"] = df["order_estimated_delivery_date"].dt.dayofweek
+        df["mes_compra"] = df["order_purchase_timestamp"].dt.month
+        df["dia_semana_compra"] = df["order_purchase_timestamp"].dt.dayofweek
+        df["hora_compra"] = df["order_purchase_timestamp"].dt.hour
+    
+    if 'customer_state' in df.columns and 'seller_state' in df.columns:
+        df['mesmo_estado'] = (df['customer_state'] == df['seller_state']).astype(int)
+        df['fluxo_logistico'] = df['seller_state'] + "_" + df['customer_state']
+        df = pd.get_dummies(df, columns=['fluxo_logistico', 'customer_state', 'seller_state'], dtype=int)
+    
+    # Alinha as colunas do DataFrame processado com as colunas reais que o modelo aprendeu
+    colunas_esperadas = ML_CLASSIFICADOR_ATRASOS.feature_names_in_
+    
+    for col in colunas_esperadas:
+        if col not in df.columns:
+            df[col] = 0 # Preenche dummies ou features ausentes com 0
+            
+    X_final = df[colunas_esperadas]
+    y_final = df['atrasou'] if 'atrasou' in df.columns else None
+    
+    return X_final, y_final
+
+# ==============================================================================
+# RENDERIZAÇÃO DA PÁGINA DO DASHBOARD
+# ==============================================================================
+def dashboard_view(request):
+    """Renderiza aquele arquivo index.html (Olist MVP) que criamos com Bootstrap."""
+    return render(request, 'dashboard.html')
+
+# ==============================================================================
+# API 1: SIMULAÇÃO DINÂMICA (AJUSTE DE PERCENTUAL)
+# ==============================================================================
+@csrf_exempt # Desabilitado apenas para facilitar o teste inicial via JS fetch()
+def api_simulacao(request):
+    print("Entrou na API")
+    if request.method == "POST":
+        try:
+            dados = json.loads(request.body)
+            percentual = int(dados.get('percentual', 20))
+            
+            caminho_teste = os.path.join(DATASET_DIR, 'split_teste_inedito.csv')
+            if not os.path.exists(caminho_teste):
+                return JsonResponse({'erro': 'Arquivo split_teste_inedito.csv não encontrado no servidor.'}, status=404)
+            
+            df_teste = pd.read_csv(caminho_teste)
+            df_amostra = df_teste.sample(frac=percentual/100, random_state=None)
+            
+            X_amostra = df_amostra.drop(columns=['atrasou'], errors='ignore')
+            y_amostra = df_amostra['atrasou'] if 'atrasou' in df_amostra.columns else None
+            
+            # Garante o alinhamento das features
+            colunas_esperadas = ML_CLASSIFICADOR_ATRASOS.feature_names_in_
+            for col in colunas_esperadas:
+                if col not in X_amostra.columns:
+                    X_amostra[col] = 0
+            X_amostra = X_amostra[colunas_esperadas]
+            
+            y_probabilidades = ML_CLASSIFICADOR_ATRASOS.predict_proba(X_amostra)[:, 1]
+            y_pred = (y_probabilidades >= 0.65).astype(int)
+            
+            volume = len(df_amostra)
+            alertas = int(np.sum(y_pred))
+            
+            if y_amostra is not None:
+                acuracia = f"{(np.mean(y_pred == y_amostra) * 100):.2f}%"
+            else:
+                acuracia = "N/A"
+            
+            return JsonResponse({
+                'sucesso': True,
+                'volume': volume,
+                'alertas': alertas,
+                'acuracia': acuracia
+            })
+            
+        except Exception as e:
+            return JsonResponse({'erro': str(e)}, status=500)
+    
+    return JsonResponse({'erro': 'Método não permitido.'}, status=405)
+
+# ==============================================================================
+# API 2: UPLOAD E STRESS TEST DE CSV AD-HOC
+# ==============================================================================
+@csrf_exempt
+def api_upload_csv(request):
+    if request.method == 'POST' and request.FILES.get('file'):
+        arquivo_csv = request.FILES['file']
+        
+        try:
+            df_submetido = pd.read_csv(arquivo_csv)
+            
+            # Processa o dataframe bruto transformando nas variáveis do modelo
+            X_submetido, y_submetido = pipeline_engenharia_atributos(df_submetido)
+            
+            # Executa as predições
+            y_probabilidades = ML_CLASSIFICADOR_ATRASOS.predict_proba(X_submetido)[:, 1]
+            y_pred = (y_probabilidades >= 0.65).astype(int)
+            
+            volume = len(df_submetido)
+            alertas = int(np.sum(y_pred))
+            
+            resultado = {
+                'sucesso': True,
+                'volume': volume,
+                'alertas': alertas,
+                'acuracia': 'N/A'
+            }
+            
+            # Se o CSV tinha gabarito ('atrasou' calculado pelas datas), calcula Acurácia e Matriz
+            if y_submetido is not None and not y_submetido.isnull().all():
+                acuracia = np.mean(y_pred == y_submetido)
+                resultado['acuracia'] = f"{(acuracia * 100):.2f}%"
+                
+                # Opcional: extrair a matriz de confusão para o front-end
+                from sklearn.metrics import confusion_matrix
+                cm = confusion_matrix(y_submetido, y_pred)
+                resultado['matriz_confusao'] = cm.tolist()
+                
+            return JsonResponse(resultado)
+            
+        except Exception as e:
+            return JsonResponse({'erro': f'Erro ao processar arquivo: {str(e)}'}, status=500)
+            
+    return JsonResponse({'erro': 'Nenhum arquivo enviado ou método inválido.'}, status=400)

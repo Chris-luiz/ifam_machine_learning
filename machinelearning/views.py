@@ -266,6 +266,7 @@ def dashboard_view(request):
 # ==============================================================================
 @csrf_exempt
 def api_simulacao(request):
+    print("Solução")
     if request.method == "POST":
         try:
             dados = json.loads(request.body)

@@ -72,7 +72,7 @@ gelocation_cols = [
 ]
 
 
-orders_df = pd.read_csv('datasets/olist_orders_dataset.csv', nrows=50000)
+orders_df = pd.read_csv('datasets/olist_orders_dataset.csv', nrows=20000)
 items_df = pd.read_csv("datasets/olist_order_items_dataset.csv", usecols=order_items_columns)
 customer_df = pd.read_csv("datasets/olist_customers_dataset.csv", usecols=customers_cols)
 payment_df = pd.read_csv("datasets/olist_order_payments_dataset.csv", usecols=payment_cols)
@@ -335,6 +335,44 @@ with mlflow.start_run(run_name="Experimento_Multimodelo"):
     
     print(classification_report(y_test, y_pred))
     print(conf_matrix)
+
+
+
+
+
+
+
+
+    # ========================================================
+    # EXTRAINDO E IMPRIMINDO O RESULTADO DE TODOS OS MODELOS
+    # ========================================================
+    resultados_df = pd.DataFrame(grid_search.cv_results_)
+
+    print("\n" + "="*80)
+    print("              DESEMPENHO DE TODOS OS MODELOS TESTADOS (Validação Cruzada)")
+    print("="*80)
+
+    # Loop para detalhar cada modelo testado de forma legível
+    for index, row in resultados_df.sort_values(by='rank_test_score').iterrows():
+        # Extrai o nome limpo do classificador
+        nome_modelo = row['param_classificador'].__class__.__name__
+        
+        # Filtra apenas os hiperparâmetros específicos do modelo (ex: max_depth, learning_rate)
+        params_modelo = {k.split('__')[1]: v for k, v in row['params'].items() if '__' in k}
+        
+        print(f"Rank {row['rank_test_score']}: {nome_modelo}")
+        print(f"  -> Parâmetros: {params_modelo}")
+        print(f"  -> F1-Score Médio: {row['mean_test_score']:.4f} (+/- {row['std_test_score']:.4f} de desvio padrão)")
+        print("-" * 80)
+
+    print("="*80 + "\n")
+
+
+
+
+
+
+
     
     # with open("ml_classifcador_atrasos.pkl", "wb") as f:
     #     pickle.dump(melhor_pipeline, f)

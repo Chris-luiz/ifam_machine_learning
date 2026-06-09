@@ -36,46 +36,6 @@
     }
 
     .table-responsive {
-        max-height: 450px;
-        overflow-y: auto;
-    }
-
-    #loadingSpinnerSimulacao,
-    #loadingSpinnerUpload {
-        display: none;
-    }
-
-    .upload-area {
-        border: 2px dashed #0d6efd;
-        border-radius: 12px;
-        padding: 50px 20px;
-        text-align: center;
-        background-color: #f8f9fa;
-        cursor: pointer;
-        transition: all 0.3s ease-in-out;
-    }
-
-    .upload-area:hover {
-        background-color: #e9ecef;
-        border-color: #0a58ca;
-        transform: translateY(-2px);
-    }
-
-    .card-metric {
-        border: none;
-        border-top: 4px solid;
-        border-radius: 8px;
-    }
-
-    .row-hit {
-        background-color: rgba(25, 135, 84, 0.04) !important;
-    }
-
-    .row-miss {
-        background-color: rgba(220, 53, 69, 0.04) !important;
-    }
-
-    .table-responsive {
         max-height: 400px;
         overflow-y: auto;
     }
@@ -137,44 +97,36 @@
 <div class="container-fluid p-4" style="background-color: #f4f6f9; min-height: 100vh;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h2 class="fw-bold text-dark m-0"><i class="fa-solid fa-microchip text-primary"></i> Ambiente de Homologação
-                IA</h2>
-            <p class="text-muted m-0">Ambiente integrado para testes de estresse, validação temporal e auditoria do
-                modelo preditivo de logística.</p>
+            <h2 class="fw-bold text-dark m-0"><i class="fa-solid fa-microchip text-primary"></i> Ambiente de Homologação IA</h2>
+            <p class="text-muted m-0">Ambiente integrado para testes de estresse, validação temporal e auditoria do modelo preditivo de logística.</p>
         </div>
         <span class="badge bg-dark p-2 text-uppercase font-monospace">Limiar de Corte: 0.65</span>
     </div>
 
     <ul class="nav nav-pills mb-4" id="dashboardTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active fw-bold px-4" id="simulacao-tab" data-bs-toggle="pill"
-                data-bs-target="#simulacao" type="button" role="tab">
+            <button class="nav-link active fw-bold px-4" id="simulacao-tab" data-bs-toggle="pill" data-bs-target="#simulacao" type="button" role="tab">
                 <i class="fa-solid fa-sliders"></i> Painel de Simulação Histórica
             </button>
         </li>
         <li class="nav-item ms-2" role="presentation">
-            <button class="nav-link fw-bold px-4" id="upload-tab" data-bs-toggle="pill" data-bs-target="#upload"
-                type="button" role="tab">
+            <button class="nav-link fw-bold px-4" id="upload-tab" data-bs-toggle="pill" data-bs-target="#upload" type="button" role="tab">
                 <i class="fa-solid fa-flask"></i> Arena de Stress Test (Holdout Externo)
             </button>
         </li>
     </ul>
 
     <div class="tab-content" id="dashboardTabsContent">
-
         <div class="tab-pane fade show active" id="simulacao" role="tabpanel">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body p-4">
                     <h5 class="card-title fw-bold text-dark">Simulação Dinâmica sobre Amostragem Temporal</h5>
-                    <p class="text-muted small">Escolha uma fração aleatória dos dados que foram separados
-                        cronologicamente para testar o poder de resposta instantânea do modelo.</p>
+                    <p class="text-muted small">Escolha uma fração aleatória dos dados que foram separados cronologicamente para testar o poder de resposta instantânea do modelo.</p>
 
                     <div class="row align-items-center mt-4">
                         <div class="col-md-8">
-                            <label for="sliderPercentual" class="form-label fw-bold">Percentual do Dataset de Teste:
-                                <span id="sliderValue" class="text-primary fs-5">5</span>%</label>
-                            <input type="range" class="form-range" min="5" max="100" step="1" id="sliderPercentual"
-                                value="5" oninput="document.getElementById('sliderValue').innerText = this.value">
+                            <label for="sliderPercentual" class="form-label fw-bold">Percentual do Dataset de Teste: <span id="sliderValue" class="text-primary fs-5">5</span>%</label>
+                            <input type="range" class="form-range" min="5" max="100" step="1" id="sliderPercentual" value="5" oninput="document.getElementById('sliderValue').innerText = this.value">
                         </div>
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
                             <button class="btn btn-primary btn-lg w-100" onclick="executarSimulacao()">
@@ -183,8 +135,7 @@
                         </div>
                     </div>
                     <div class="text-center mt-3">
-                        <span id="loadingSpinnerSimulacao" class="spinner-border spinner-border-sm text-primary"
-                            role="status"></span>
+                        <span id="loadingSpinnerSimulacao" class="spinner-border spinner-border-sm text-primary" role="status"></span>
                     </div>
                 </div>
             </div>
@@ -192,31 +143,24 @@
             <div id="resultados-simulacao" style="display: none;">
                 <div class="row text-center g-3 mb-4">
                     <div class="col-md-4">
-                        <div class="card card-metric border-top-info bg-white shadow-sm p-3 h-100"
-                            style="border-top-color: #0dcaf0;">
-                            <h6 class="text-uppercase text-muted fw-bold small mb-1">Volume de Pedidos Avaliados</h6>
+                        <div class="card card-metric bg-white shadow-sm p-3 h-100" style="border-top-color: #0dcaf0;">
+                            <h6 class="text-uppercase text-muted fw-bold small mb-1">Volume de Pedidos Evaluados</h6>
                             <h2 class="fw-bold m-0 text-dark" id="res-volume">0</h2>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card card-metric border-top-warning bg-white shadow-sm p-3 h-100"
-                            style="border-top-color: #ffc107;">
+                        <div class="card card-metric bg-white shadow-sm p-3 h-100" style="border-top-color: #ffc107;">
                             <h6 class="text-uppercase text-muted fw-bold small mb-1">Alertas Críticos de Atraso</h6>
                             <h2 class="fw-bold m-0 text-warning" id="res-alertas">0</h2>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card card-metric border-top-success bg-white shadow-sm p-3 h-100"
-                            style="border-top-color: #198754;">
+                        <div class="card card-metric bg-white shadow-sm p-3 h-100" style="border-top-color: #198754;">
                             <h6 class="text-uppercase text-muted fw-bold small mb-1">Acurácia Global Almejada</h6>
                             <h2 class="fw-bold m-0 text-success" id="res-acuracia">0%</h2>
                         </div>
                     </div>
-
-
-
-                    <div class="row g-4 mb-4">
-                    <!-- Esquerda: Matriz de Confusão -->
+                </div> <div class="row g-4 mb-4">
                     <div class="col-lg-5">
                         <div class="card shadow-sm border-0 h-100">
                             <div class="card-header bg-white py-3">
@@ -224,7 +168,7 @@
                             </div>
                             <div class="card-body">
                                 <p class="text-muted small mb-3">Mapeamento anatômico de acertos e falhas baseados no corte probabilístico de $\ge 0.65$.</p>
-                                <div class="row">
+                                <div class="row g-2">
                                     <div class="col-6">
                                         <div class="cm-box cm-true-negative">
                                             <span class="cm-label">Verdadeiro Negativo (Acertou No Prazo)</span>
@@ -254,7 +198,6 @@
                         </div>
                     </div>
 
-                    <!-- Direita: Grafos de Performance Estatística (Precision, Recall, F1, AUC) -->
                     <div class="col-lg-7">
                         <div class="card shadow-sm border-0 h-100">
                             <div class="card-header bg-white py-3">
@@ -266,14 +209,14 @@
                                         <div class="p-3 border rounded bg-light text-center">
                                             <small class="text-uppercase text-muted fw-bold d-block mb-1">Precision</small>
                                             <h3 class="fw-bold text-dark font-monospace mb-0" id="stat-precision">0%</h3>
-                                            <small class="text-muted small d-block mt-1">Confiabilidade do alarme disparado</small>
+                                            <small class="text-muted small d-block mt-1">Confiabilidade do alarme</small>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="p-3 border rounded bg-light text-center">
                                             <small class="text-uppercase text-muted fw-bold d-block mb-1">Recall (Sensibilidade)</small>
                                             <h3 class="fw-bold text-primary font-monospace mb-0" id="stat-recall">0%</h3>
-                                            <small class="text-muted small d-block mt-1">Proporção de atrasos reais capturados</small>
+                                            <small class="text-muted small d-block mt-1">Atrasos reais capturados</small>
                                         </div>
                                     </div>
                                     <div class="col-6">
@@ -294,12 +237,9 @@
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="card shadow-sm border-0">
+                </div> <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header bg-white py-3">
-                        <h6 class="m-0 fw-bold text-secondary"><i class="fa-solid fa-list-check"></i> Auditoria de
-                            Acertos e Erros da IA (Simulação)</h6>
+                        <h6 class="m-0 fw-bold text-secondary"><i class="fa-solid fa-list-check"></i> Auditoria de Acertos e Erros da IA (Simulação)</h6>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -317,24 +257,20 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div> </div>
 
         <div class="tab-pane fade" id="upload" role="tabpanel">
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body p-4">
                     <h5 class="card-title fw-bold text-dark">Submissão Manual de Massa Inédita</h5>
-                    <p class="text-muted small">Carregue um arquivo estruturado no padrão consolidado para simular o
-                        comportamento do classificador com novos registros de faturamento da plataforma.</p>
+                    <p class="text-muted small">Carregue um arquivo estruturado no padrão consolidado para simular o comportamento do classificador com novos registros de faturamento da plataforma.</p>
 
                     <div class="upload-area mt-3" onclick="document.getElementById('arquivoCSV').click()">
                         <i class="fa-solid fa-file-csv fa-3x text-primary mb-2"></i>
                         <h5 class="fw-bold">Arraste ou clique para selecionar o arquivo .csv</h5>
-                        <p class="text-muted small mb-0">Apenas arquivos gerados a partir da pipeline de engenharia
-                            tratada.</p>
+                        <p class="text-muted small mb-0">Apenas arquivos gerados a partir da pipeline de engenharia tratada.</p>
                     </div>
-                    <input type="file" id="arquivoCSV" accept=".csv" style="display: none;"
-                        onchange="atualizarNomeArquivo(this)">
+                    <input type="file" id="arquivoCSV" accept=".csv" style="display: none;" onchange="atualizarNomeArquivo(this)">
                     <p id="nomeArquivo" class="text-primary mt-3 text-center fw-bold"></p>
 
                     <div class="text-center mt-4">
@@ -343,8 +279,7 @@
                         </button>
                         <div id="loadingSpinnerUpload" class="mt-4">
                             <div class="spinner-border text-success" role="status"></div>
-                            <p class="text-muted small mt-2">O pipeline de Machine Learning está mapeando as
-                                transformações das variáveis...</p>
+                            <p class="text-muted small mt-2">O pipeline de Machine Learning está mapeando as transformações das variáveis...</p>
                         </div>
                     </div>
                 </div>
@@ -353,22 +288,19 @@
             <div id="resultados-upload" style="display: none;">
                 <div class="row text-center g-3 mb-4">
                     <div class="col-md-4">
-                        <div class="card card-metric border-top-primary bg-white shadow-sm p-3 h-100"
-                            style="border-top-color: #0d6efd;">
+                        <div class="card card-metric bg-white shadow-sm p-3 h-100" style="border-top-color: #0d6efd;">
                             <h6 class="text-uppercase text-muted fw-bold small mb-1">Linhas Processadas</h6>
                             <h2 class="fw-bold m-0 text-primary" id="upload-volume">0</h2>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card card-metric border-top-danger bg-white shadow-sm p-3 h-100"
-                            style="border-top-color: #dc3545;">
+                        <div class="card card-metric bg-white shadow-sm p-3 h-100" style="border-top-color: #dc3545;">
                             <h6 class="text-uppercase text-muted fw-bold small mb-1">Atrasos Mapeados pelo Modelo</h6>
                             <h2 class="fw-bold m-0 text-danger" id="upload-alertas">0</h2>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card card-metric border-top-success bg-white shadow-sm p-3 h-100"
-                            style="border-top-color: #198754;">
+                        <div class="card card-metric bg-white shadow-sm p-3 h-100" style="border-top-color: #198754;">
                             <h6 class="text-uppercase text-muted fw-bold small mb-1">Acurácia de Validação Real</h6>
                             <h2 class="fw-bold m-0 text-success" id="upload-acuracia">-</h2>
                         </div>
@@ -377,8 +309,7 @@
 
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-white py-3">
-                        <h6 class="m-0 fw-bold text-secondary"><i class="fa-solid fa-list-check"></i> Auditoria de
-                            Acertos e Erros da IA (Massa de Dados Externa)</h6>
+                        <h6 class="m-0 fw-bold text-secondary"><i class="fa-solid fa-list-check"></i> Auditoria de Acertos e Erros da IA (Massa de Dados Externa)</h6>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -398,14 +329,12 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Utilitários auxiliares
     function atualizarNomeArquivo(input) {
         if (input.files && input.files.length > 0) {
             document.getElementById('nomeArquivo').innerHTML = `<i class="fa-solid fa-file-circle-check"></i> Arquivo pronto: ${input.files[0].name}`;
@@ -428,11 +357,9 @@
         return cookieValue;
     }
 
-    // Função genérica para preencher a tabela HTML de forma elegante
     function renderizarTabelaResultados(tbodyId, detalhes) {
         const tbody = document.getElementById(tbodyId);
         tbody.innerHTML = "";
-
 
         if (!detalhes || detalhes.length === 0) {
             tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted p-4">Nenhum detalhe disponível para este lote.</td></tr>`;
@@ -466,8 +393,7 @@
         });
     }
 
-    // API 1: PROCESSAR SIMULAÇÃO
-    async function executarSimulacao() {
+    async function ejecutarSimulacao() {
         const percentual = document.getElementById('sliderPercentual').value;
         const spinner = document.getElementById('loadingSpinnerSimulacao');
         const resultBox = document.getElementById('resultados-simulacao');
@@ -487,24 +413,20 @@
             const data = await response.json();
 
             if (response.ok && data.sucesso) {
-                // Injetar Métricas Básicas
                 document.getElementById('res-volume').innerText = data.volume;
                 document.getElementById('res-alertas').innerText = data.alertas;
                 document.getElementById('res-acuracia').innerText = data.acuracia;
                 
-                // INJETAR VALORES DA MATRIZ DE CONFUSÃO
                 document.getElementById('cm-tn').innerText = data.metrics.cm.tn;
                 document.getElementById('cm-fp').innerText = data.metrics.cm.fp;
                 document.getElementById('cm-fn').innerText = data.metrics.cm.fn;
                 document.getElementById('cm-tp').innerText = data.metrics.cm.tp;
                 
-                // INJETAR COEFICIENTES AVANÇADOS
                 document.getElementById('stat-precision').innerText = data.metrics.precision;
                 document.getElementById('stat-recall').innerText = data.metrics.recall;
                 document.getElementById('stat-f1').innerText = data.metrics.f1_score;
                 document.getElementById('stat-auc').innerText = data.metrics.auc_roc;
                 
-                // Renderizar Tabela de Auditoria Individual
                 renderizarTabelaResultados('tbody-simulacao', data.detalhes);
                 resultBox.style.display = 'block';
             } else {
@@ -518,7 +440,6 @@
         }
     }
 
-    // API 2: PROCESSAR UPLOAD CSV (Supondo que a estrutura retorne dados equivalentes)
     async function enviarCSV() {
         const input = document.getElementById('arquivoCSV');
         const spinner = document.getElementById('loadingSpinnerUpload');
@@ -547,6 +468,10 @@
                 document.getElementById('upload-volume').innerText = data.volume;
                 document.getElementById('upload-alertas').innerText = data.alertas;
                 document.getElementById('upload-acuracia').innerText = data.acuracia;
+                
+                // CORREÇÃO AQUI: Chama a função para renderizar também os dados da tabela de Upload
+                renderizarTabelaResultados('tbody-upload', data.detalhes);
+                
                 resultBox.style.display = 'block';
             } else {
                 alert("Erro ao aplicar inferência: " + (data.erro || "Falha."));

@@ -9,6 +9,7 @@ from django.http import JsonResponse
 import json
 import numpy as np
 from django.views.decorators.csrf import csrf_exempt
+from sklearn.metrics import recall_score, confusion_matrix, precision_score, f1_score, roc_auc_score
 
 MODEL_PATH = os.path.join(settings.BASE_DIR, 'machinelearning', 'ml_models', 'ml_classifcador_atrasos.pkl')
 DATASET_DIR = os.path.join(settings.BASE_DIR, 'datasets')
@@ -22,7 +23,6 @@ def vitrine_view(request):
     return render(request, 'vitrine.html', {
         'produtos': produtos
     })
-
 
 def carregar_produtos_vitrine():
     try:
@@ -45,6 +45,7 @@ def buscar_coordenadas_cep(cep_prefixo):
     """Busca a lat/lng média do prefixo do CEP no dataset de geolocalização do Olist"""
     try:
         geo_df = pd.read_csv(os.path.join(DATASET_DIR, 'olist_geolocation_dataset.csv'), nrows=5000)
+       
         regiao = geo_df[geo_df['geolocation_zip_code_prefix'] == int(cep_prefixo)]
         if not regiao.empty:
             return regiao['geolocation_lat'].mean(), regiao['geolocation_lng'].mean(), regiao['geolocation_state'].iloc[0]
@@ -263,25 +264,23 @@ def dashboard_view(request):
 # ==============================================================================
 # API 1: SIMULAÇÃO DINÂMICA (AJUSTE DE PERCENTUAL)
 # ==============================================================================
-@csrf_exempt # Desabilitado apenas para facilitar o teste inicial via JS fetch()
+@csrf_exempt
 def api_simulacao(request):
-    print("Entrou na API")
     if request.method == "POST":
         try:
             dados = json.loads(request.body)
             percentual = int(dados.get('percentual', 20))
             
-            caminho_teste = os.path.join(DATASET_DIR, 'split_teste_inedito.csv')
+            caminho_teste = os.path.join(DATASET_DIR, 'prod/test.csv')
             if not os.path.exists(caminho_teste):
-                return JsonResponse({'erro': 'Arquivo split_teste_inedito.csv não encontrado no servidor.'}, status=404)
+                return JsonResponse({'erro': 'Arquivo não encontrado.'}, status=404)
             
             df_teste = pd.read_csv(caminho_teste)
             df_amostra = df_teste.sample(frac=percentual/100, random_state=None)
             
-            X_amostra = df_amostra.drop(columns=['atrasou'], errors='ignore')
-            y_amostra = df_amostra['atrasou'] if 'atrasou' in df_amostra.columns else None
+            X_amostra = df_amostra.drop(columns=['alvo_real_atrasou', 'atrasou'], errors='ignore')
+            y_amostra = df_amostra['alvo_real_atrasou'] if 'alvo_real_atrasou' in df_amostra.columns else None
             
-            # Garante o alinhamento das features
             colunas_esperadas = ML_CLASSIFICADOR_ATRASOS.feature_names_in_
             for col in colunas_esperadas:
                 if col not in X_amostra.columns:
@@ -294,8 +293,48 @@ def api_simulacao(request):
             volume = len(df_amostra)
             alertas = int(np.sum(y_pred))
             
+            y_pred_list = y_pred.tolist()
+            y_amostra_list = y_amostra.tolist() if y_amostra is not None else []
+            
+            tabela_detalhes = []
+            metrics = {} # Dicionário para as novas métricas
+            
             if y_amostra is not None:
                 acuracia = f"{(np.mean(y_pred == y_amostra) * 100):.2f}%"
+                
+                # ==========================================
+                # CALCULO DAS MÉTRICAS DE DATA SCIENCE
+                # ==========================================
+                p_score = precision_score(y_amostra, y_pred, zero_division=0) * 100
+                r_score = recall_score(y_amostra, y_pred, zero_division=0) * 100
+                f1 = f1_score(y_amostra, y_pred, zero_division=0) * 100
+                
+                try:
+                    auc = roc_auc_score(y_amostra, y_probabilidades) * 100
+                except ValueError:
+                    auc = 0.0 # Caso a amostra aleatória venha sem uma das classes
+                
+                # Matriz de Confusão (Verdadeiro Negativo, Falso Positivo, Falso Negativo, Verdadeiro Positivo)
+                cm = confusion_matrix(y_amostra, y_pred)
+                if cm.shape == (2, 2):
+                    tn, fp, fn, tp = map(int, cm.ravel())
+                else:
+                    tn, fp, fn, tp = volume, 0, 0, 0 # Fallback de segurança
+                
+                metrics = {
+                    'precision': f"{p_score:.2f}%",
+                    'recall': f"{r_score:.2f}%",
+                    'f1_score': f"{f1:.2f}%",
+                    'auc_roc': f"{auc:.2f}%",
+                    'cm': {'tn': tn, 'fp': fp, 'fn': fn, 'tp': tp}
+                }
+                
+                for pred, real in zip(y_pred_list, y_amostra_list):
+                    tabela_detalhes.append({
+                        'predicao': int(pred),   
+                        'real': int(real),       
+                        'acertou': bool(pred == real)
+                    })
             else:
                 acuracia = "N/A"
             
@@ -303,7 +342,9 @@ def api_simulacao(request):
                 'sucesso': True,
                 'volume': volume,
                 'alertas': alertas,
-                'acuracia': acuracia
+                'acuracia': acuracia,
+                'metrics': metrics, # Enviando o pacote de métricas avançadas
+                'detalhes': tabela_detalhes,
             })
             
         except Exception as e:
@@ -316,6 +357,7 @@ def api_simulacao(request):
 # ==============================================================================
 @csrf_exempt
 def api_upload_csv(request):
+    print("ENtriou aqui")
     if request.method == 'POST' and request.FILES.get('file'):
         arquivo_csv = request.FILES['file']
         

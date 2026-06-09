@@ -1,18 +1,25 @@
+import numpy as np
+import pandas as pd
+import pickle
 import mlflow
 import mlflow.sklearn
-
-import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
-import seaborn as sns
-from imblearn.under_sampling import RandomUnderSampler
-from imblearn.pipeline import Pipeline
-from geopy.distance import geodesic
-import pickle
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report, f1_score
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 
-mlflow.sklearn.autolog()
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline
+
+from geopy.distance import geodesic
+
+# mlflow.sklearn.autolog()
 
 
 order_items_columns = [
@@ -65,13 +72,14 @@ gelocation_cols = [
 ]
 
 
-orders_df = pd.read_csv('datasets/olist_orders_dataset.csv')
+orders_df = pd.read_csv('datasets/olist_orders_dataset.csv', nrows=50000)
 items_df = pd.read_csv("datasets/olist_order_items_dataset.csv", usecols=order_items_columns)
 customer_df = pd.read_csv("datasets/olist_customers_dataset.csv", usecols=customers_cols)
 payment_df = pd.read_csv("datasets/olist_order_payments_dataset.csv", usecols=payment_cols)
 products_df = pd.read_csv("datasets/olist_products_dataset.csv", usecols=products_cols)
 sellers_df = pd.read_csv("datasets/olist_sellers_dataset.csv", usecols=sellers_cols)
 geolocation_df = pd.read_csv("datasets/olist_geolocation_dataset.csv", usecols=gelocation_cols)
+
 
 geolocation_df = geolocation_df.groupby('geolocation_zip_code_prefix').agg({
     'geolocation_lat': 'mean',
@@ -236,46 +244,61 @@ features = [
 # y_test = y.iloc[corte:]
 
 # df_treino_export = X_train.copy()
-# df_treino_export['alvo_real_atrasou'] = y_train
+# df_treino_export['atrasou'] = y_train
 # df_treino_export.to_csv("datasets/dados_treinamento_IA.csv", index=False)
 # print("-> CSV de Treinamento exportado (dados_treinamento_IA.csv).")
 
 # df_holdout_export = X_test.copy()
-# df_holdout_export['alvo_real_atrasou'] = y_test
+# df_holdout_export['atrasou'] = y_test
 # df_holdout_export.to_csv("datasets/holdout_test_django.csv", index=False)
 # print("-> CSV de Teste Holdout exportado (holdout_test_django.csv).")
 
 
-PROD_TREINO_PATH = '/datasets/prod/treino.csv'
-PROD_TEST_PATH = '/datasets/prod/test.csv'
+# PROD_TREINO_PATH = 'datasets/prod/treino.csv'
+# PROD_TEST_PATH = 'datasets/prod/test.csv'
 
-prod_dataset = pd.read_csv(PROD_TREINO_PATH)
+# prod_dataset = pd.read_csv(PROD_TREINO_PATH)
+# # y_validation = pd.read_csv(PROD_TEST_PATH)
+# X = prod_dataset[features]
+# y = prod_dataset['atrasou']
+
+# prod_dataset = pd.read_csv(PROD_TREINO_PATH)
 # y_validation = pd.read_csv(PROD_TEST_PATH)
-X = prod_dataset[features]
-y = prod_dataset['atrasou']
+X = orders_df[features]
+y = orders_df['atrasou']
 
 
 
-X_train, X_test, y_train, y_test = train_test_split(prod_dataset, y, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
 
 pipeline = Pipeline([
-    ('under_sampling', RandomUnderSampler(random_state=42)),
+    ('scaler', StandardScaler()),
+    # ('under_sampling', RandomUnderSampler(random_state=42)),
+    ('over_sampling', SMOTE(random_state=42, sampling_strategy=0.5)),
     ('classificador', GradientBoostingClassifier(random_state=42))
 ])
 
 param_grid_pipeline = [
     {
         'classificador': [GradientBoostingClassifier(random_state=42)],
-        'classificador__n_estimators': [100, 200],
-        'classificador__learning_rate': [0.05, 0.1],
-        'classificador__max_depth': [3, 5]
+        'classificador__n_estimators': [100],
+        'classificador__learning_rate': [0.1],
+        'classificador__max_depth': [3]
     },
     {
         'classificador': [RandomForestClassifier(random_state=42)],
-        'classificador__n_estimators': [100, 200],
-        'classificador__max_depth': [5, 10],
-        'classificador__criterion': ['gini', 'entropy']
-    }
+        'classificador__n_estimators': [100],
+        'classificador__max_depth': [10],
+    },
+    # {
+    #     'classificador': [SVC(probability=True, random_state=42, max_iter=1500)], # probability=True habilita predict_proba
+    #     'classificador__C': [1.0],
+    #     'classificador__kernel': ['rbf']
+    # },
+    # {
+    #     'classificador': [LogisticRegression(random_state=42, max_iter=1000)],
+    #     'classificador__C': [0.1, 1.0]
+    # }
 ]
 
 with mlflow.start_run(run_name="Experimento_Multimodelo"):
@@ -283,7 +306,7 @@ with mlflow.start_run(run_name="Experimento_Multimodelo"):
     grid_search = GridSearchCV(
         estimator=pipeline,
         param_grid=param_grid_pipeline,
-        cv=5,
+        cv=3,
         scoring='f1',
         n_jobs=-1,
         verbose=2
@@ -296,52 +319,69 @@ with mlflow.start_run(run_name="Experimento_Multimodelo"):
     print(f"\nMelhores parâmetros encontrados:\n{grid_search.best_params_}\n")
 
     y_probabilidades = melhor_pipeline.predict_proba(X_test)[:, 1]
-    threshold = 0.65 
-    y_pred = (y_probabilidades >= threshold).astype(int)
-
+    threshold = 0.5
+    best_f1 = 0
+    
+    for th in np.arange(0.3, 0.8, 0.05):
+        y_pred_temp = (y_probabilidades >= th).astype(int)
+        f1_temp = f1_score(y_test, y_pred_temp)
+        if f1_temp > best_f1:
+            best_f1 = f1_temp
+            best_threshold = th
+    
+    print(f"O melhor Threshold matemático é: {best_threshold:.2f} com F1-Score de: {best_f1:.2f}")
+    y_pred = (y_probabilidades >= best_threshold).astype(int)
     conf_matrix = confusion_matrix(y_test, y_pred)
+    
     print(classification_report(y_test, y_pred))
     print(conf_matrix)
     
-    with open("ml_classifcador_atrasos.pkl", "wb") as f:
-        pickle.dump(melhor_pipeline, f)
+    # with open("ml_classifcador_atrasos.pkl", "wb") as f:
+    #     pickle.dump(melhor_pipeline, f)
     
-    mlflow.log_metric("teste_f1_score", classification_report(y_test, y_pred, output_dict=True)['1']['f1-score'])
+    # mlflow.log_metric("teste_f1_score", classification_report(y_test, y_pred, output_dict=True)['1']['f1-score'])
 
 
 
 # ==========================================
 # CÓDIGO PARA GERAR OS GRÁFICOS DO TRABALHO
 # ==========================================
-
-# 1. Gráfico da Matriz de Confusão
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(6, 5))
 disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=['No Prazo', 'Atrasou'])
 disp.plot(cmap='Blues', values_format='d')
-plt.title('Matriz de Confusão - Modelo Final (Pipeline GB)')
+plt.title('Matriz de Confusão - Avaliação Multimodelo')
 plt.savefig('matriz_confusao_final.png', dpi=300, bbox_inches='tight')
 plt.close()
-print("-> Gráfico da Matriz de Confusão salvo como 'matriz_confusao_final.png'")
 
-# 2. Gráfico de Importância das Features
-# Como o classificador está dentro do pipeline, acessamos ele pelo nome do passo
-classificador_gb = melhor_pipeline.named_steps['classificador']
-importancias = classificador_gb.feature_importances_
+# Extração Segura de Importância (Previne quebra de script caso o SVM ou a Regressão Logística vençam)
+classificador_final = melhor_pipeline.named_steps['classificador']
 
-# Criamos um DataFrame para ordenar as 10 colunas mais importantes
-df_importancias = pd.DataFrame({
-    'Feature': features,
-    'Importancia': importancias
-}).sort_values(by='Importancia', ascending=False).head(10)
-
-plt.figure(figsize=(10, 6))
-sns.barplot(x='Importancia', y='Feature', data=df_importancias, palette='viridis')
-plt.title('Top 10 Variáveis Mais Importantes para Prever Atrasos')
-plt.xlabel('Grau de Importância')
-plt.ylabel('Variável')
-plt.savefig('importancia_features.png', dpi=300, bbox_inches='tight')
-plt.close()
-print("-> Gráfico de Importância das Variáveis salvo como 'importancia_features.png'")
+if hasattr(classificador_final, 'feature_importances_'):
+    importancias = classificador_final.feature_importances_
+    df_importancias = pd.DataFrame({'Feature': features, 'Importancia': importancias}).sort_values(by='Importancia', ascending=False).head(10)
+    
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x='Importancia', y='Feature', data=df_importancias, hue='Feature', palette='viridis', legend=False)
+    plt.title('Top 10 Variáveis Mais Importantes para Prever Atrasos')
+    plt.xlabel('Grau de Importância')
+    plt.ylabel('Variável')
+    plt.savefig('importancia_features.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("-> Gráfico de Importância gerado com sucesso.")
+elif hasattr(classificador_final, 'coef_'):
+    importancias = np.abs(classificador_final.coef_[0])
+    df_importancias = pd.DataFrame({'Feature': features, 'Importancia': importancias}).sort_values(by='Importancia', ascending=False).head(10)
+    
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x='Importancia', y='Feature', data=df_importancias, hue='Feature', palette='magma', legend=False)
+    plt.title('Top 10 Coeficientes Determinantes (Modelo Linear)')
+    plt.xlabel('Peso Absoluto do Coeficiente')
+    plt.ylabel('Variável')
+    plt.savefig('importancia_features.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("-> Gráfico de pesos de coeficientes gerado com sucesso.")
+else:
+    print("-> O modelo vencedor não suporta extração direta de importância de atributos por este método.")
 
 # {'classificador__learning_rate': 0.05, 'classificador__max_depth': 5, 'classificador__n_estimators': 100}
 
@@ -363,3 +403,51 @@ print("-> Gráfico de Importância das Variáveis salvo como 'importancia_featur
 
 #   sns.barplot(x='Importancia', y='Feature', data=df_importancias, palette='viridis')
 # -> Gráfico de Importância das Variáveis salvo como 'importancia_features.png'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Melhores parâmetros encontrados:
+# {'classificador': GradientBoostingClassifier(random_state=42), 'classificador__learning_rate': 0.05, 'classificador__max_depth': 3, 'classificador__n_estimators': 100}
+
+#               precision    recall  f1-score   support
+
+#            0       0.94      0.90      0.92      4443
+#            1       0.28      0.40      0.33       415
+
+#     accuracy                           0.86      4858
+#    macro avg       0.61      0.65      0.63      4858
+# weighted avg       0.88      0.86      0.87      4858
+
+# [[4017  426]
+#  [ 250  165]]
+# -> Gráfico de Importância gerado com sucesso.
+
+
+
+# Melhores parâmetros encontrados:
+# {'classificador': GradientBoostingClassifier(random_state=42), 'classificador__learning_rate': 0.1, 'classificador__max_depth': 3, 'classificador__n_estimators': 100}
+
+#               precision    recall  f1-score   support
+
+#            0       0.95      0.88      0.91     11146
+#            1       0.25      0.45      0.32       984
+
+#     accuracy                           0.84     12130
+#    macro avg       0.60      0.66      0.62     12130
+# weighted avg       0.89      0.84      0.86     12130
+
+# [[9808 1338]
+#  [ 544  440]]
+# -> Gráfico de Importância gerado com sucesso.

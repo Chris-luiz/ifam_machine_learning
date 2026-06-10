@@ -1,0 +1,52 @@
+{% extends "store/base.html" %}
+
+{% block title %}Perfil - Olist E-Commerce{% endblock %}
+
+{% block content %}
+<h1 class="page-title">👤 Meu Perfil</h1>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <div class="card">
+        <h2 style="color: #0066cc; margin-bottom: 20px;">Informações Pessoais</h2>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="name">Nome Completo</label>
+                <input type="text" id="name" name="name" value="{{ user.name }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="state">Estado (UF)</label>
+                <select id="state" name="state" required>
+                    <option value="">Selecione um estado</option>
+                    {% for state in states %}
+                        <option value="{{ state }}" {% if state == user.state %}selected{% endif %}>
+                            {{ state }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="city">Cidade</label>
+                <input type="text" id="city" name="city" value="{{ user.city }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="zip">CEP</label>
+                <input type="text" id="zip" name="zip" value="{{ user.zip }}" placeholder="00000-000" required>
+            </div>
+
+            <button type="submit" class="btn" style="width: 100%; padding: 12px;">
+                Salvar Alterações
+            </button>
+        </form>
+    </div>
+
+    <div class="alert alert-info" style="margin-top: 20px;">
+        <strong>ℹ️ Informação:</strong> Estas informações serão usadas como seu endereço de destino durante o checkout. O estado será importante para calcular a distância de entrega e fazer a predição de atrasos.
+    </div>
+</div>
+{% endblock %}

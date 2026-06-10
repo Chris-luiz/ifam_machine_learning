@@ -1,0 +1,56 @@
+{% extends "store/base.html" %}
+
+{% load store_filters %}
+
+{% block title %}Catálogo - Olist E-Commerce{% endblock %}
+
+{% block content %}
+<h1 class="page-title">📦 Catálogo de Produtos</h1>
+
+<form method="GET" class="filter-form">
+    <select name="category">
+        <option value="">Todas as Categorias</option>
+        {% for category in categories %}
+            <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>
+                {{ category }}
+            </option>
+        {% endfor %}
+    </select>
+    <input type="text" name="search" placeholder="Buscar produto..." value="{{ search_term }}">
+    <button type="submit" class="btn">Filtrar</button>
+    <a href="{% url 'catalog' %}" class="btn btn-secondary">Limpar</a>
+</form>
+
+{% if products %}
+    <div class="grid">
+        {% for product in products %}
+            <div class="product-card">
+                <div class="product-name">{{ product.name }}</div>
+                <div class="product-category">{{ product.category }}</div>
+                <div class="product-seller">
+                    🏪 {{ sellers_map|get_item:product.seller_id|get_item:"name" }}<br>
+                    <span style="font-size: 11px;">{{ sellers_map|get_item:product.seller_id|get_item:"state" }}</span>
+                </div>
+                <div class="product-price">R$ {{ product.price|floatformat:2 }}</div>
+                <div class="product-actions">
+                    <button type="button" class="btn" onclick="addToCart('{{ product.id }}', '{{ product.name }}')">
+                        Adicionar
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-message">
+        <p>Nenhum produto encontrado.</p>
+        <a href="{% url 'catalog' %}" class="btn">Ver Todos</a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Função para obter item de dicionário em template
+    // Será usada via filtro customizado
+</script>
+{% endblock %}

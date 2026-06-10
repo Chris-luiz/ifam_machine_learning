@@ -1,0 +1,203 @@
+{% extends "store/base.html" %}
+{% load store_filters %}
+{% block title %}Testes em Lote - Olist E-Commerce{% endblock %}
+
+{% block content %}
+<h1 class="page-title">📊 Testes em Lote</h1>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-top: 20px;">
+    <!-- Input -->
+    <div>
+        <div class="card">
+            <h2 style="color: #0066cc; margin-bottom: 15px;">📤 Enviar Dados</h2>
+            <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                Forneça um CSV com dados de teste. A última coluna deve ser a classe real (0 ou 1).
+            </p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label for="csv_content">Cole o CSV aqui:</label>
+                    <textarea id="csv_content" name="csv_content" placeholder="feature1,feature2,...,feature_n,classe&#10;1.5,2.3,...,0.8,0&#10;2.1,1.9,...,0.5,1" 
+                              style="min-height: 300px; font-family: monospace; font-size: 12px;">{{ request.POST.csv_content }}</textarea>
+                </div>
+
+                <div class="alert alert-info" style="margin-bottom: 15px; font-size: 12px;">
+                    <strong>ℹ️ Formato:</strong> O CSV deve ter a classe real na última coluna (0 = no prazo, 1 = atraso)
+                </div>
+
+                <button type="submit" class="btn" style="width: 100%; padding: 12px; font-size: 16px;">
+                    ▶ Fazer Predições
+                </button>
+            </form>
+
+            {% if error %}
+                <div class="alert alert-error" style="margin-top: 15px;">
+                    <strong>❌ Erro:</strong> {{ error }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Resumo de Métricas -->
+    {% if results %}
+        <div>
+            <div class="card">
+                <h2 style="color: #0066cc; margin-bottom: 15px;">📈 Métricas Gerais</h2>
+                
+                <div class="metric-card" style="border: none; padding: 0; margin-bottom: 10px;">
+                    <div class="metric-label">Acurácia</div>
+                    <div class="metric-value">{{ results.accuracy|mul:100|floatformat:2 }}%</div>
+                </div>
+
+                <div class="metric-card" style="border: none; padding: 0; margin-bottom: 10px;">
+                    <div class="metric-label">Precisão</div>
+                    <div class="metric-value">{{ results.precision|mul:100|floatformat:2 }}%</div>
+                </div>
+
+                <div class="metric-card" style="border: none; padding: 0; margin-bottom: 10px;">
+                    <div class="metric-label">Recall</div>
+                    <div class="metric-value">{{ results.recall|mul:100|floatformat:2 }}%</div>
+                </div>
+
+                <div class="metric-card" style="border: none; padding: 0;">
+                    <div class="metric-label">F1-Score</div>
+                    <div class="metric-value">{{ results.f1_score|mul:100|floatformat:2 }}%</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Resultados Detalhados -->
+{% if results %}
+    <div style="margin-top: 30px;">
+        <!-- Matriz de Confusão -->
+        <div class="card">
+            <h2 style="color: #0066cc; margin-bottom: 15px;">🎯 Matriz de Confusão</h2>
+            
+            <table style="max-width: 400px; margin: 0 auto;">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Predito: No Prazo</th>
+                        <th>Predito: Atraso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Real: No Prazo</strong></td>
+                        <td style="background-color: #d4edda; padding: 15px; text-align: center; font-weight: bold;">
+                            {{ results.confusion_matrix|get_item:0|get_item:0 }}
+                        </td>
+                        <td style="background-color: #f8d7da; padding: 15px; text-align: center; font-weight: bold;">
+                            {{ results.confusion_matrix|get_item:0|get_item:1 }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Real: Atraso</strong></td>
+                        <td style="background-color: #f8d7da; padding: 15px; text-align: center; font-weight: bold;">
+                            {{ results.confusion_matrix|get_item:1|get_item:0 }}
+                        </td>
+                        <td style="background-color: #d4edda; padding: 15px; text-align: center; font-weight: bold;">
+                            {{ results.confusion_matrix|get_item:1|get_item:1 }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Parâmetros do Modelo -->
+        <div class="card" style="margin-top: 20px;">
+            <h2 style="color: #0066cc; margin-bottom: 15px;">⚙️ Parâmetros do Modelo</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Modelo</div>
+                    <div class="metric-value" style="font-size: 14px;">{{ results.model_params.name }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">AUC-PR</div>
+                    <div class="metric-value">{{ results.model_params.aucpr|floatformat:4 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">ROC-AUC</div>
+                    <div class="metric-value">{{ results.model_params.rocauc|floatformat:4 }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">N Estimators</div>
+                    <div class="metric-value">{{ results.model_params.n_estimators }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Learning Rate</div>
+                    <div class="metric-value">{{ results.model_params.learning_rate }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Max Depth</div>
+                    <div class="metric-value">{{ results.model_params.max_depth }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Subsample</div>
+                    <div class="metric-value">{{ results.model_params.subsample }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Threshold</div>
+                    <div class="metric-value">{{ results.model_params.threshold|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de Predições -->
+        <div class="card" style="margin-top: 20px;">
+            <h2 style="color: #0066cc; margin-bottom: 15px;">📋 Detalhes das Predições</h2>
+            <p style="color: #666; font-size: 12px; margin-bottom: 15px;">
+                Mostrando os primeiros 50 resultados (Total: {{ results.total_predictions }})
+            </p>
+            
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Real</th>
+                            <th>Predito</th>
+                            <th>Probabilidade</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pred in results.predictions %}
+                            <tr>
+                                <td style="font-family: monospace; font-size: 12px;">{{ pred.index }}</td>
+                                <td>
+                                    {% if pred.actual == 0 %}
+                                        <span style="color: #28a745;">No Prazo</span>
+                                    {% else %}
+                                        <span style="color: #dc3545;">Atraso</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pred.predicted == 0 %}
+                                        <span style="color: #28a745;">No Prazo</span>
+                                    {% else %}
+                                        <span style="color: #dc3545;">Atraso</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pred.probability }}%</td>
+                                <td>
+                                    {% if pred.correct %}
+                                        <span style="color: #28a745; font-weight: bold;">✓ Acerto</span>
+                                    {% else %}
+                                        <span style="color: #dc3545; font-weight: bold;">✗ Erro</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

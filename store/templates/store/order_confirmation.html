@@ -1,0 +1,91 @@
+{% extends "store/base.html" %}
+
+{% block title %}Pedido Confirmado - Olist E-Commerce{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 20px 0;">
+    <h1 class="page-title">✓ Pedido Realizado com Sucesso!</h1>
+    <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
+        Seu pedido foi processado e analisado pelo modelo de Machine Learning
+    </p>
+</div>
+
+<div style="max-width: 600px; margin: 0 auto;">
+    <!-- Informações do Pedido -->
+    <div class="card">
+        <h2 style="color: #0066cc; margin-bottom: 15px;">📦 Informações do Pedido</h2>
+        
+        <div style="margin-bottom: 15px;">
+            <strong>ID do Pedido:</strong><br>
+            <span style="font-family: monospace; background-color: #f0f0f0; padding: 8px; border-radius: 4px; display: inline-block;">
+                {{ order.order_id }}
+            </span>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <strong>Valor Total:</strong><br>
+            <span style="font-size: 20px; color: #0066cc; font-weight: bold;">
+                R$ {{ order.total|floatformat:2 }}
+            </span>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <strong>Destino:</strong><br>
+            {{ order.user.city }}, {{ order.user.state }} - {{ order.user.zip }}
+        </div>
+
+        <div style="margin-bottom: 15px;">
+            <strong>Origem (Vendedor):</strong><br>
+            {{ order.seller_state }}
+        </div>
+    </div>
+
+    <!-- Resultado da Predição -->
+    <div class="card" style="margin-top: 20px;">
+        <h2 style="color: #0066cc; margin-bottom: 15px;">🧠 Análise de Atraso (ML)</h2>
+        
+        {% if order.prediction.predicted_delay == 0 %}
+            <div class="prediction-result prediction-on-time">
+                <div class="prediction-title">✓ Entrega no Prazo</div>
+                <p style="margin: 10px 0;">
+                    Seu pedido tem alta probabilidade de ser entregue dentro do prazo estimado.
+                </p>
+                <div class="prediction-probability">
+                    Probabilidade de atraso: <strong>{{ order.prediction.delay_probability }}%</strong>
+                </div>
+            </div>
+        {% else %}
+            <div class="prediction-result prediction-delayed">
+                <div class="prediction-title">⚠️ Risco de Atraso</div>
+                <p style="margin: 10px 0;">
+                    Seu pedido pode sofrer atrasos na entrega. Recomendamos acompanhar o status.
+                </p>
+                <div class="prediction-probability">
+                    Probabilidade de atraso: <strong>{{ order.prediction.delay_probability }}%</strong>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Próximos Passos -->
+    <div class="card" style="margin-top: 20px;">
+        <h2 style="color: #0066cc; margin-bottom: 15px;">📝 Próximos Passos</h2>
+        <ol style="color: #666; line-height: 1.8;">
+            <li>Um email de confirmação será enviado em breve</li>
+            <li>Acompanhe o status do seu pedido</li>
+            <li>Receba notificações sobre o envio</li>
+            <li>Confirme o recebimento após a entrega</li>
+        </ol>
+    </div>
+
+    <!-- Ações -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+        <a href="{% url 'catalog' %}" class="btn" style="text-align: center; padding: 12px;">
+            Continuar Comprando
+        </a>
+        <a href="{% url 'batch_test' %}" class="btn btn-secondary" style="text-align: center; padding: 12px;">
+            Testar em Lote
+        </a>
+    </div>
+</div>
+{% endblock %}

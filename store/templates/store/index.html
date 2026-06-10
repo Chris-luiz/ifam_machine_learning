@@ -1,0 +1,94 @@
+{% extends "store/base.html" %}
+
+{% block title %}Olist E-Commerce - Início{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 40px 0;">
+    <h1 style="font-size: 36px; color: #000; margin-bottom: 20px;">
+        🛍️ Bem-vindo ao Olist E-Commerce
+    </h1>
+    <p style="font-size: 16px; color: #666; margin-bottom: 30px;">
+        Simule compras e veja o poder do Machine Learning em ação
+    </p>
+    <a href="{% url 'catalog' %}" class="btn" style="font-size: 16px; padding: 15px 30px;">
+        Começar a Comprar
+    </a>
+</div>
+
+<div class="grid" style="margin-top: 40px;">
+    <div class="card">
+        <h3 style="color: #0066cc; margin-bottom: 10px;">📦 Catálogo</h3>
+        <p style="color: #666; margin-bottom: 15px;">
+            Navegue por produtos compatíveis com o dataset Olist
+        </p>
+        <a href="{% url 'catalog' %}" class="btn" style="width: 100%; text-align: center;">Ver Catálogo</a>
+    </div>
+
+    <div class="card">
+        <h3 style="color: #0066cc; margin-bottom: 10px;">🧠 ML Predictions</h3>
+        <p style="color: #666; margin-bottom: 15px;">
+            Predições em tempo real com GradientBoosting
+        </p>
+        <p style="font-size: 12px; color: #0066cc;">
+            Modelo: {{ model_info.name }}<br>
+            AUC-PR: {{ model_info.aucpr }}<br>
+            F1-Score: {{ model_info.f1_score }}
+        </p>
+    </div>
+
+    <div class="card">
+        <h3 style="color: #0066cc; margin-bottom: 10px;">📊 Testes em Lote</h3>
+        <p style="color: #666; margin-bottom: 15px;">
+            Envie CSV para análise em massa com métricas completas
+        </p>
+        <a href="{% url 'batch_test' %}" class="btn" style="width: 100%; text-align: center;">Testar em Lote</a>
+    </div>
+
+    <div class="card">
+        <h3 style="color: #0066cc; margin-bottom: 10px;">⚡ Rápido</h3>
+        <p style="color: #666; margin-bottom: 15px;">
+            Predições instantâneas após cada compra
+        </p>
+        <p style="font-size: 12px; color: #0066cc;">
+            Sem banco de dados<br>
+            Dados em arrays Python<br>
+            Modelo .pkl integrado
+        </p>
+    </div>
+</div>
+
+<div style="background-color: #f0f0f0; padding: 30px; border-radius: 4px; margin-top: 40px;">
+    <h2 style="color: #000; margin-bottom: 20px;">Como Funciona</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+        <div style="text-align: center;">
+            <div style="background-color: #0066cc; color: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px;">1</div>
+            <h4 style="color: #000;">Atualize Perfil</h4>
+            <p style="color: #666; font-size: 14px;">Configure seu estado de destino</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="background-color: #0066cc; color: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px;">2</div>
+            <h4 style="color: #000;">Selecione Produtos</h4>
+            <p style="color: #666; font-size: 14px;">Navegue e adicione ao carrinho</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="background-color: #0066cc; color: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px;">3</div>
+            <h4 style="color: #000;">Checkout</h4>
+            <p style="color: #666; font-size: 14px;">Revise e confirme seu pedido</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="background-color: #0066cc; color: #fff; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 10px;">4</div>
+            <h4 style="color: #000;">Predição</h4>
+            <p style="color: #666; font-size: 14px;">Veja a previsão de atraso</p>
+        </div>
+    </div>
+</div>
+
+<div style="text-align: center; margin-top: 40px;">
+    <a href="{% url 'catalog' %}" class="btn" style="font-size: 16px; padding: 15px 30px; margin-right: 10px;">
+        Explorar Catálogo
+    </a>
+    <a href="{% url 'batch_test' %}" class="btn btn-secondary" style="font-size: 16px; padding: 15px 30px;">
+        Testar em Lote
+    </a>
+</div>
+{% endblock %}

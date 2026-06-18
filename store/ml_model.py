@@ -1,166 +1,314 @@
-"""
-Funções para carregar e usar o modelo ML
-"""
 import pickle
 import os
 import numpy as np
-from pathlib import Path
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
-# Caminho do modelo
-MODEL_PATH = Path(__file__).parent.parent / 'ml_classificador_atrasos_v2.pkl'
+# Caminho do modelo - está na raiz do projeto
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_PATH = os.path.join(BASE_DIR, 'ml_classificador_atrasos_v2.pkl')
 
-# Cache do modelo
-_model_cache = None
+print(f"[ML] Carregando modelo de: {MODEL_PATH}")
+print(f"[ML] Arquivo existe: {os.path.exists(MODEL_PATH)}")
 
-def load_model():
-    """Carrega o modelo do arquivo .pkl"""
-    global _model_cache
-    
-    if _model_cache is not None:
-        return _model_cache
-    
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(f"Modelo não encontrado em: {MODEL_PATH}")
-    
-    try:
+# Carregar modelo uma única vez
+PIPELINE = None
+THRESHOLD = 0.61
+FEATURES = []
+MODEL_INFO = {}
+MODEL_LOADED = False
+EXPECTED_FEATURES = []
+
+try:
+    if os.path.exists(MODEL_PATH):
         with open(MODEL_PATH, 'rb') as f:
-            _model_cache = pickle.load(f)
-        print(f"✓ Modelo carregado de: {MODEL_PATH}")
-        return _model_cache
-    except Exception as e:
-        print(f"✗ Erro ao carregar modelo: {e}")
-        raise
-
-def get_model_info():
-    """Retorna informações do modelo"""
-    model = load_model()
-    return {
-        'name': model.get('model_info', {}).get('name', 'GradientBoosting'),
-        'threshold': model.get('threshold', 0.61),
-        'aucpr': model.get('model_info', {}).get('aucpr', 0.2794),
-        'rocauc': model.get('model_info', {}).get('rocauc', 0.7814),
-        'f1_score': model.get('model_info', {}).get('f1_score', 0.340),
-        'recall': model.get('model_info', {}).get('recall', 0.550),
-        'precision': model.get('model_info', {}).get('precision', 0.246),
-        'n_estimators': model.get('model_info', {}).get('n_estimators', 200),
-        'learning_rate': model.get('model_info', {}).get('learning_rate', 0.05),
-        'max_depth': model.get('model_info', {}).get('max_depth', 4),
-        'subsample': model.get('model_info', {}).get('subsample', 0.8),
-    }
+            model_data = pickle.load(f)
+        
+        # Extrair componentes do modelo
+        if isinstance(model_data, dict):
+            # O arquivo contém um dicionário com pipeline, threshold e features
+            PIPELINE = model_data.get('pipeline')
+            THRESHOLD = float(model_data.get('threshold', 0.61))
+            FEATURES = model_data.get('features', [])
+            MODEL_INFO = model_data.get('model_info', {})
+            
+            EXPECTED_FEATURES = model_data.get("features")
+            
+            print(f"[ML] Pipeline extraído: {type(PIPELINE)}")
+            print(f"[ML] Threshold: {THRESHOLD}")
+            print(f"[ML] Número de features: {len(FEATURES)}")
+        else:
+            # Se for um objeto direto (não é dicionário)
+            PIPELINE = model_data
+            THRESHOLD = 0.61
+            FEATURES = []
+            MODEL_INFO = {}
+        
+        MODEL_LOADED = True
+        print(f"[ML] ✓ Modelo carregado com sucesso!")
+        
+        # Tentar obter número de features
+        try:
+            if hasattr(PIPELINE, 'n_features_in_'):
+                print(f"[ML] Número de features esperadas: {PIPELINE.n_features_in_}")
+            elif hasattr(PIPELINE, 'named_steps'):
+                classifier = PIPELINE.named_steps.get('classificador')
+                if classifier and hasattr(classifier, 'n_features_in_'):
+                    print(f"[ML] Número de features esperadas: {classifier.n_features_in_}")
+        except:
+            pass
+            
+    else:
+        raise FileNotFoundError(f"Arquivo não encontrado: {MODEL_PATH}")
+except Exception as e:
+    print(f"[ML] ✗ Erro ao carregar modelo: {e}")
+    import traceback
+    traceback.print_exc()
+    PIPELINE = None
+    THRESHOLD = 0.61
+    FEATURES = []
+    MODEL_INFO = {}
+    MODEL_LOADED = False
 
 def predict_delay(features_dict):
     """
-    Realiza predição usando o modelo
+    Faz predição de atraso para um pedido
     
     Args:
-        features_dict: Dicionário com as features necessárias
+        features_dict: Dicionário com as features do pedido
     
     Returns:
-        dict com predicted_delay (0 ou 1) e delay_probability (0-100)
+        dict com predição e probabilidade
     """
-    model = load_model()
-    pipeline = model.get('pipeline')
-    threshold = model.get('threshold', 0.61)
-    features_list = model.get('features', [])
     
-    # Criar array de features na ordem correta
-    features_array = []
-    for feature_name in features_list:
-        features_array.append(features_dict.get(feature_name, 0.0))
+    if not PIPELINE:
+        return {
+            'will_delay': False,
+            'probability': 0.0,
+            'confidence': 0.0,
+            'error': 'Modelo não carregado'
+        }
     
-    # Converter para numpy array
-    X = np.array([features_array])
+    try:
+        # Construir array com as 62 features esperadas na ordem correta
+        X = np.zeros((1, len(EXPECTED_FEATURES)))
+        
+        for i, feature_name in enumerate(EXPECTED_FEATURES):
+            if feature_name in features_dict:
+                X[0, i] = features_dict[feature_name]
+            else:
+                # Se a feature não foi fornecida, usar 0 como padrão
+                X[0, i] = 0
+        
+        # Fazer predição com o pipeline (que inclui o scaler)
+        probabilities = PIPELINE.predict_proba(X)
+        probability_delay = probabilities[0, 1]  # Probabilidade da classe 1 (atraso)
+        
+        # Aplicar threshold
+        prediction = 1 if probability_delay >= THRESHOLD else 0
+        
+        return {
+            'will_delay': prediction == 1,
+            'delay_probability': float(probability_delay),
+            'confidence': float(max(probabilities[0])),
+            'threshold': float(THRESHOLD)
+        }
     
-    # Fazer predição
-    if pipeline:
-        try:
-            # Obter probabilidade
-            proba = pipeline.predict_proba(X)[0]
-            probability = proba[1]  # Probabilidade da classe 1 (atraso)
-        except:
-            # Se falhar, usar predição simples
-            probability = np.random.random()
-    else:
-        probability = np.random.random()
-    
-    # Aplicar threshold
-    predicted_delay = 1 if probability >= threshold else 0
-    delay_probability = int(probability * 100)
-    
+    except Exception as e:
+        print(f"[ML] Erro na predição: {e}")
+        return {
+            'will_delay': False,
+            'delay_probability': 0.0,
+            'confidence': 0.0,
+            'error': str(e)
+        }
+
+
+def get_model_info():
+    """Retorna informações do modelo"""
     return {
-        'predicted_delay': predicted_delay,
-        'delay_probability': delay_probability,
-        'probability': probability
+        'name': 'GradientBoosting + Pipeline',
+        'aucpr': 0.2794,
+        'rocauc': 0.7814,
+        'threshold': round(THRESHOLD, 4),
+        'n_estimators': 200,
+        'learning_rate': 0.05,
+        'max_depth': 4,
+        'subsample': 0.8,
+        'features_count': len(FEATURES),
     }
 
-def process_batch_predictions(csv_content):
+
+def process_batch_predictions(data, percentage=100):
     """
-    Processa um CSV de testes e retorna métricas
+    Processa predições em lote para um conjunto de dados usando o MODELO REAL
     
     Args:
-        csv_content: String com conteúdo do CSV
+        data: lista de listas (cada linha é um exemplo com features + label na última coluna)
+        percentage: porcentagem de dados usados (para exibição)
     
     Returns:
-        dict com métricas e predições
+        dicionário com resultados e métricas
     """
-    model = load_model()
-    threshold = model.get('threshold', 0.61)
     
-    # Parsear CSV
-    lines = csv_content.strip().split('\n')
-    if len(lines) < 2:
-        raise ValueError("CSV deve conter pelo menos uma linha de dados")
+    if not MODEL_LOADED or PIPELINE is None:
+        return {
+            'error': 'Modelo não carregado',
+            'accuracy': 0,
+            'precision': 0,
+            'recall': 0,
+            'f1_score': 0,
+            'percentage': percentage,
+        }
     
-    predictions = []
-    tp = tn = fp = fn = 0
-    
-    for i, line in enumerate(lines[1:], 1):
-        values = line.strip().split(',')
-        if len(values) < 2:
-            continue
+    try:
+        # Validar dados
+        if not data or len(data) == 0:
+            return {
+                'error': 'Nenhum dado para processar',
+                'accuracy': 0,
+                'precision': 0,
+                'recall': 0,
+                'f1_score': 0,
+                'percentage': percentage,
+            }
         
+        # Converter para numpy array com tratamento de erros
         try:
-            actual = int(values[-1])
+            data_array = np.array(data, dtype=float)
+        except ValueError as e:
+            return {
+                'error': f'Erro ao converter dados: {str(e)}. Verifique se todos os valores são numéricos.',
+                'accuracy': 0,
+                'precision': 0,
+                'recall': 0,
+                'f1_score': 0,
+                'percentage': percentage,
+            }
+        
+        # Validar que temos pelo menos 2 colunas (features + label)
+        if data_array.ndim != 2 or data_array.shape[1] < 2:
+            return {
+                'error': f'Formato inválido: esperado matriz 2D com pelo menos 2 colunas, recebido {data_array.shape}',
+                'accuracy': 0,
+                'precision': 0,
+                'recall': 0,
+                'f1_score': 0,
+                'percentage': percentage,
+            }
+        
+        # Separar features e labels
+        X = data_array[:, :-1]  # Todas as colunas exceto a última
+        y_true = data_array[:, -1].astype(int)  # Última coluna é o label
+        
+        # Validar dimensões
+        if X.shape[0] == 0 or X.shape[1] == 0:
+            return {
+                'error': 'Dados inválidos: matriz vazia',
+                'accuracy': 0,
+                'precision': 0,
+                'recall': 0,
+                'f1_score': 0,
+                'percentage': percentage,
+            }
+        
+        # Validar número de features
+        n_features_expected = None
+        try:
+            if hasattr(PIPELINE, 'n_features_in_'):
+                n_features_expected = PIPELINE.n_features_in_
+            elif hasattr(PIPELINE, 'named_steps'):
+                classifier = PIPELINE.named_steps.get('classificador')
+                if classifier and hasattr(classifier, 'n_features_in_'):
+                    n_features_expected = classifier.n_features_in_
         except:
-            continue
+            pass
         
-        # Simular predição (em produção, usar o modelo real)
-        probability = np.random.random()
-        predicted = 1 if probability >= threshold else 0
-        correct = actual == predicted
+        if n_features_expected and X.shape[1] != n_features_expected:
+            return {
+                'error': f'Número de features incorreto: esperado {n_features_expected}, recebido {X.shape[1]}',
+                'accuracy': 0,
+                'precision': 0,
+                'recall': 0,
+                'f1_score': 0,
+                'percentage': percentage,
+            }
         
-        if predicted == 1 and actual == 1:
-            tp += 1
-        elif predicted == 0 and actual == 0:
-            tn += 1
-        elif predicted == 1 and actual == 0:
-            fp += 1
-        elif predicted == 0 and actual == 1:
-            fn += 1
+        # ============================================
+        # USAR O PIPELINE REAL PARA FAZER PREDIÇÕES
+        # ============================================
+        try:
+            print(f"[ML] Fazendo predições com pipeline real...")
+            print(f"[ML] Dados: {X.shape[0]} amostras com {X.shape[1]} features")
+            
+            # Obter probabilidades do pipeline (que inclui o scaler)
+            y_proba = PIPELINE.predict_proba(X)[:, 1]
+            
+            # Aplicar threshold para obter predições binárias
+            y_pred = (y_proba >= THRESHOLD).astype(int)
+            
+            print(f"[ML] ✓ Predições realizadas com sucesso!")
+            
+        except Exception as e:
+            print(f"[ML] ✗ Erro ao fazer predições: {e}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'error': f'Erro ao fazer predições: {str(e)}',
+                'accuracy': 0,
+                'precision': 0,
+                'recall': 0,
+                'f1_score': 0,
+                'percentage': percentage,
+            }
         
-        predictions.append({
-            'index': i,
-            'actual': actual,
-            'predicted': predicted,
-            'probability': int(probability * 100),
-            'correct': correct
-        })
+        # Calcular métricas
+        accuracy = accuracy_score(y_true, y_pred)
+        precision = precision_score(y_true, y_pred, zero_division=0)
+        recall = recall_score(y_true, y_pred, zero_division=0)
+        f1 = f1_score(y_true, y_pred, zero_division=0)
+        
+        # Matriz de confusão
+        cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+        
+        # Preparar detalhes das predições (primeiras 50)
+        predictions = []
+        for i in range(len(y_true)):
+            predictions.append({
+                'index': i + 1,
+                'actual': int(y_true[i]),
+                'predicted': int(y_pred[i]),
+                'probability': round(y_proba[i] * 100, 2),
+                'correct': int(y_true[i]) == int(y_pred[i]),
+            })
+        
+        print(f"[ML] Métricas calculadas:")
+        print(f"[ML]   Accuracy: {accuracy:.4f}")
+        print(f"[ML]   Precision: {precision:.4f}")
+        print(f"[ML]   Recall: {recall:.4f}")
+        print(f"[ML]   F1-Score: {f1:.4f}")
+        
+        return {
+            'accuracy': round(accuracy, 4),
+            'precision': round(precision, 4),
+            'recall': round(recall, 4),
+            'f1_score': round(f1, 4),
+            'confusion_matrix': cm.tolist(),
+            'model_params': get_model_info(),
+            'predictions': predictions,
+            'total_predictions': len(y_true),
+            'percentage': percentage,
+        }
     
-    total = tp + tn + fp + fn
-    accuracy = (tp + tn) / total if total > 0 else 0
-    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-    
-    model_info = get_model_info()
-    
-    return {
-        'accuracy': round(accuracy, 4),
-        'precision': round(precision, 4),
-        'recall': round(recall, 4),
-        'f1_score': round(f1, 4),
-        'confusion_matrix': [[tn, fp], [fn, tp]],
-        'model_params': model_info,
-        'predictions': predictions[:50],  # Primeiros 50
-        'total_predictions': len(predictions)
-    }
+    except Exception as e:
+        print(f"[ML] Erro ao processar predições em lote: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'error': f'Erro ao processar: {str(e)}',
+            'accuracy': 0,
+            'precision': 0,
+            'recall': 0,
+            'f1_score': 0,
+            'percentage': percentage,
+        }
+

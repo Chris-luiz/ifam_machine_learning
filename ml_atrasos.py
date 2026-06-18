@@ -29,7 +29,6 @@ warnings.filterwarnings('ignore')
 # CONFIGURAÇÕES GLOBAIS
 # ============================================================
 RANDOM_STATE = 42
-TEST_SIZE = 0.2
 SMOTE_STRATEGY = 0.4   # minoritária chegará a 40% da majoritária
 CV_FOLDS = 5           # StratifiedKFold — mantém proporção em cada fold
 
@@ -184,9 +183,6 @@ orders_df = pd.get_dummies(orders_df, columns=['seller_state'],   dtype=int)
 colunas_estados_customer = [c for c in orders_df.columns if c.startswith('customer_state_')]
 colunas_estados_seller   = [c for c in orders_df.columns if c.startswith('seller_state_')]
 
-# NOTA: 'taxa_atraso_categoria' e colunas_fluxo são calculadas DEPOIS do split
-#       para evitar data leakage.
-
 features_base = [
     "distancia_km",
     "dias_estimados_logistica",
@@ -203,9 +199,14 @@ features_base = [
 ] + colunas_estados_customer + colunas_estados_seller
 
 # ============================================================
-# 4. SPLIT ESTRATIFICADO — ANTES de qualquer target encoding
+# 4. SPLIT ESTRATIFICADO 70/15/15
+#    - 70% treino (para train_test_split)
+#    - 15% teste (para batch_test — SERÁ EXPORTADO)
+#    - 15% validação (opcional, pode ser usado depois)
 # ============================================================
-print("\nSplit estratificado treino/teste...")
+print("\n" + "="*80)
+print("Split estratificado 70% treino / 15% teste / 15% validação...")
+print("="*80)
 
 X = orders_df[features_base + ['product_category_name']]
 y = orders_df['atrasou']
@@ -214,19 +215,32 @@ print(f"  Total de registros: {len(y)}")
 print(f"  Atrasos (1): {y.sum()} ({y.mean()*100:.1f}%)")
 print(f"  No prazo (0): {(y==0).sum()} ({(y==0).mean()*100:.1f}%)")
 
-X_train, X_test, y_train, y_test = train_test_split(
+# Primeiro split: 70% treino + 30% (teste + validação)
+X_train, X_temp, y_train, y_temp = train_test_split(
     X, y,
-    test_size=TEST_SIZE,
+    test_size=0.30,  # 30% para teste + validação
     random_state=RANDOM_STATE,
-    stratify=y          # <-- garante mesma proporção em treino e teste
+    stratify=y
 )
+
+# Segundo split: dos 30%, dividir em 50/50 (15% teste, 15% validação)
+X_test, X_val, y_test, y_val = train_test_split(
+    X_temp, y_temp,
+    test_size=0.50,  # 50% dos 30% = 15%
+    random_state=RANDOM_STATE,
+    stratify=y_temp
+)
+
+print(f"\n  Treino: {len(X_train)} registros ({len(X_train)/len(X)*100:.1f}%)")
+print(f"  Teste:  {len(X_test)} registros ({len(X_test)/len(X)*100:.1f}%)")
+print(f"  Validação: {len(X_val)} registros ({len(X_val)/len(X)*100:.1f}%)")
 
 # ============================================================
 # 5. TARGET ENCODING SEM LEAKAGE
 #    A taxa de atraso por categoria é calculada APENAS com treino
 #    e depois aplicada ao teste via merge — sem ver o futuro.
 # ============================================================
-print("Calculando target encoding (sem leakage)...")
+print("\nCalculando target encoding (sem leakage)...")
 
 taxa_treino = (
     X_train[['product_category_name']].join(y_train)
@@ -240,27 +254,52 @@ mediana_global = taxa_treino['taxa_atraso_categoria'].median()
 
 X_train = X_train.merge(taxa_treino, on='product_category_name', how='left')
 X_test  = X_test.merge(taxa_treino,  on='product_category_name', how='left')
+X_val   = X_val.merge(taxa_treino,   on='product_category_name', how='left')
 
 X_train['taxa_atraso_categoria'] = X_train['taxa_atraso_categoria'].fillna(mediana_global)
 X_test['taxa_atraso_categoria']  = X_test['taxa_atraso_categoria'].fillna(mediana_global)
+X_val['taxa_atraso_categoria']   = X_val['taxa_atraso_categoria'].fillna(mediana_global)
 
 # Remove coluna de texto (não entra no modelo)
 X_train = X_train.drop(columns=['product_category_name'])
 X_test  = X_test.drop(columns=['product_category_name'])
+X_val   = X_val.drop(columns=['product_category_name'])
 
 features_final = features_base + ['taxa_atraso_categoria']
 
 X_train = X_train[features_final]
 X_test  = X_test[features_final]
+X_val   = X_val[features_final]
 
 # ============================================================
-# 6. RATIO DE DESBALANCEAMENTO (usado no XGBoost e sample_weight)
+# 6. EXPORTAR DADOS DE TESTE PARA BATCH_TEST
+#    O arquivo test.csv contém APENAS as features numéricas
+#    e o label (alvo_real_atrasou) na última coluna
+# ============================================================
+print("\n" + "="*80)
+print("Exportando dados de teste para batch_test...")
+print("="*80)
+
+# Criar DataFrame com features + label
+X_test_export = X_test.copy()
+X_test_export['alvo_real_atrasou'] = y_test.values
+
+# Salvar como CSV
+X_test_export.to_csv('test.csv', index=False)
+print(f"✓ Arquivo 'test.csv' exportado com sucesso!")
+print(f"  Dimensões: {X_test_export.shape}")
+print(f"  Colunas: {len(X_test_export.columns)} (67 features + 1 label)")
+print(f"  Atrasos no teste: {y_test.sum()} ({y_test.mean()*100:.1f}%)")
+print(f"  Arquivo pronto para usar no batch_test!")
+
+# ============================================================
+# 7. RATIO DE DESBALANCEAMENTO (usado no XGBoost e sample_weight)
 # ============================================================
 ratio_classes = (y_train == 0).sum() / (y_train == 1).sum()
-print(f"  Ratio negativo/positivo: {ratio_classes:.1f}x")
+print(f"\n  Ratio negativo/positivo (treino): {ratio_classes:.1f}x")
 
 # ============================================================
-# 7. MODELOS
+# 8. MODELOS
 #    Cada modelo tem sua estratégia de balanceamento mais adequada:
 #    - GradientBoosting: sample_weight (nativo, sem SMOTE)
 #    - RandomForest: class_weight='balanced'
@@ -531,27 +570,10 @@ plt.close()
 print("-> Gráfico comparativo de modelos salvo.")
 
 print("\nTodos os artefatos gerados com sucesso.")
-
-# ============================================================
-# COMO USAR O MODELO SALVO EM PRODUÇÃO (ex: Django)
-# ============================================================
-# import pickle
-# import pandas as pd
-#
-# with open("ml_classificador_atrasos_v2.pkl", "rb") as f:
-#     artefato = pickle.load(f)
-#
-# pipeline   = artefato['pipeline']
-# threshold  = artefato['threshold']
-# features   = artefato['features']
-#
-# # Monte um DataFrame com as mesmas features e na mesma ordem:
-# X_novo = pd.DataFrame([{
-#     'distancia_km': 450.0,
-#     'dias_estimados_logistica': 12,
-#     ... # todas as features
-# }])[features]
-#
-# prob_atraso = pipeline.predict_proba(X_novo)[0, 1]
-# vai_atrasar = int(prob_atraso >= threshold)
-# print(f"Probabilidade de atraso: {prob_atraso:.2%} | Vai atrasar: {bool(vai_atrasar)}")
+print("\n" + "="*80)
+print("RESUMO FINAL")
+print("="*80)
+print(f"✓ Modelo salvo: ml_classificador_atrasos_v2.pkl")
+print(f"✓ Dados de teste exportados: test.csv ({len(X_test_export)} registros)")
+print(f"✓ Pronto para usar no batch_test do Django!")
+print("="*80)

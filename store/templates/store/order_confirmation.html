@@ -44,7 +44,7 @@
     <div class="card" style="margin-top: 20px;">
         <h2 style="color: #0066cc; margin-bottom: 15px;">🧠 Análise de Atraso (ML)</h2>
         
-        {% if order.prediction.predicted_delay == 0 %}
+        {% if order.prediction.will_delay == 0 %}
             <div class="prediction-result prediction-on-time">
                 <div class="prediction-title">✓ Entrega no Prazo</div>
                 <p style="margin: 10px 0;">
@@ -68,7 +68,7 @@
     </div>
 
     <!-- Próximos Passos -->
-    <div class="card" style="margin-top: 20px;">
+    <div class="card" style="margin-top: 20px; padding: 20px">
         <h2 style="color: #0066cc; margin-bottom: 15px;">📝 Próximos Passos</h2>
         <ol style="color: #666; line-height: 1.8;">
             <li>Um email de confirmação será enviado em breve</li>

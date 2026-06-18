@@ -1,13 +1,27 @@
-"""
-Views da aplicação Olist E-Commerce
-"""
+import pickle
+import os
+import csv
+import json
+import random
+import numpy as np
+import math
+from datetime import datetime
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-import json
-from .data import PRODUCTS, SELLERS, ESTADOS_BR, DEFAULT_USER
+from django.views.decorators.csrf import csrf_exempt
+from .data import PRODUCTS, SELLERS, DEFAULT_USER, ESTADOS_BR
 from .ml_model import predict_delay, get_model_info, process_batch_predictions
-import math
+
+# Carregar modelo uma única vez
+MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'ml_classificador_atrasos_v2.pkl')
+try:
+    with open(MODEL_PATH, 'rb') as f:
+        MODEL = pickle.load(f)
+    MODEL_LOADED = True
+except Exception as e:
+    MODEL = None
+    MODEL_LOADED = False
 
 # Simulação de sessão do usuário
 def get_user_profile(request):
@@ -32,15 +46,16 @@ def save_user_profile(request, profile):
     request.session['user_profile'] = profile
     request.session.modified = True
 
-# Views
+
 def index(request):
-    """Página inicial"""
     cart_count = len(get_cart(request))
     model_info = get_model_info()
+    
     return render(request, 'store/index.html', {
         'cart_count': cart_count,
         'model_info': model_info
     })
+
 
 def catalog(request):
     """Página de catálogo"""
@@ -72,6 +87,7 @@ def catalog(request):
         'search_term': search
     })
 
+
 def profile(request):
     """Página de perfil do usuário"""
     cart_count = len(get_cart(request))
@@ -90,6 +106,7 @@ def profile(request):
         'states': ESTADOS_BR,
         'cart_count': cart_count
     })
+
 
 def cart(request):
     """Página do carrinho"""
@@ -114,6 +131,7 @@ def cart(request):
         'cart_count': len(cart_items)
     })
 
+
 def checkout(request):
     """Página de checkout"""
     cart_items = get_cart(request)
@@ -136,17 +154,18 @@ def checkout(request):
     freight = 15.00
     
     if request.method == 'POST':
-        # Preparar features para predição
+        # Preparar features para predição - TODAS AS 62 FEATURES
         seller_state = cart_items[0].get('seller_state', 'SP') if cart_items else 'SP'
         
+        # Inicializar features com todas as 62 esperadas
         features = {
             'distancia_km': math.sqrt((len(user['state']) + len(seller_state)) * 1000),
             'dias_estimados_logistica': 5,
             'dia_semana_estimado': 2,
-            'mes_compra': 6,
-            'dia_semana_compra': 3,
+            'mes_compra': datetime.today().month,
+            'dia_semana_compra': datetime.today().day,
             'mesmo_estado': 1 if user['state'] == seller_state else 0,
-            'hora_compra': 10,
+            'hora_compra': datetime.now().second,
             'price': total,
             'freight_value': freight,
             'qtde_itens': len(cart_items),
@@ -155,30 +174,33 @@ def checkout(request):
             'taxa_atraso_categoria': 0.08,
         }
         
-        # Adicionar features de estado do cliente
+        # Adicionar features de estado do cliente (27 estados)
         for estado in ESTADOS_BR:
             features[f'customer_state_{estado}'] = 1 if user['state'] == estado else 0
         
-        # Adicionar features de estado do vendedor
+        # Adicionar features de estado do vendedor (27 estados)
         for estado in ESTADOS_BR:
             features[f'seller_state_{estado}'] = 1 if seller_state == estado else 0
         
-        # Fazer predição
+        # Fazer predição com todas as features
         prediction = predict_delay(features)
         
         # Salvar resultado na sessão
         request.session['last_order'] = {
-            'order_id': f"ORD_{len(get_cart(request))}_{hash(str(cart_items)) % 10000}",
-            'total': total + freight,
-            'prediction': prediction,
-            'user': user,
-            'seller_state': seller_state
+            'order': {
+                'order_id': f"ORD_{len(get_cart(request))}_{hash(str(cart_items)) % 10000}",
+                'total': total + freight,
+                'prediction': prediction,
+                'user': user,
+                'seller_state': seller_state
+            }
         }
+        
+    
         request.session.modified = True
         
         # Limpar carrinho
-        save_cart(request, [])
-        
+        # save_cart(request, [])
         return redirect('order_confirmation')
     
     return render(request, 'store/checkout.html', {
@@ -189,81 +211,148 @@ def checkout(request):
         'cart_count': len(cart_items)
     })
 
+
 def order_confirmation(request):
-    """Página de confirmação do pedido"""
-    order = request.session.get('last_order')
+    """Confirmação de pedido com predição"""
     
-    if not order:
-        return redirect('catalog')
     
-    return render(request, 'store/order_confirmation.html', {
-        'order': order,
-        'cart_count': 0
-    })
+    user = get_user_profile(request)
+    cart_items = get_cart(request)
+    
+    if not cart_items or not user:
+        return redirect('checkout')
+    
+    request.session['cart'] = []
+    request.session.modified = True
+    
+    prediction = (request.session['last_order'])
+    print("Last Order")
+    print(prediction)
+    
+    return render(request, 'store/order_confirmation.html', context=prediction)
+
 
 def batch_test(request):
-    """Página de testes em lote"""
-    cart_count = len(get_cart(request))
+    """Testes em lote com upload de CSV e porcentagem"""
     results = None
     error = None
     
     if request.method == 'POST':
-        csv_content = request.POST.get('csv_content', '')
-        
-        if not csv_content.strip():
-            error = 'Por favor, forneça dados CSV'
-        else:
+        try:
+            csv_content = None
+            percentage = int(request.POST.get('percentage', 100))
+            # Validar porcentagem
+            if not (1 <= percentage <= 100):
+                error = "Porcentagem deve estar entre 1% e 100%"
+                return render(request, 'store/batch_test.html', {'error': error})
+            
+            # Obter dados do CSV (arquivo ou texto)
+            if 'csv_file' in request.FILES:
+                csv_file = request.FILES['csv_file']
+                
+                try:
+                    csv_content = csv_file.read().decode('utf-8')
+                except UnicodeDecodeError:
+                    error = "Arquivo deve estar em formato UTF-8"
+                    return render(request, 'store/batch_test.html', {'error': error})
+            else:
+                csv_content = request.POST.get('csv_content', '').strip()
+            
+            if not csv_content:
+                error = "Por favor, forneça um arquivo CSV ou cole o conteúdo"
+                return render(request, 'store/batch_test.html', {'error': error})
+            
+            # Parsear CSV - remover linhas vazias
+            if isinstance(csv_content, str):
+                lines = [line.strip() for line in csv_content.strip().split('\n') if line.strip()]
+            else:
+                lines = csv_content
+            
+            if len(lines) < 2:
+                error = "CSV deve ter pelo menos 2 linhas (cabeçalho + dados)"
+                return render(request, 'store/batch_test.html', {'error': error})
+            
+            # Extrair dados
             try:
-                results = process_batch_predictions(csv_content)
+                reader = csv.reader(lines)
+                header = next(reader)
+                data = list(reader)
             except Exception as e:
-                error = f'Erro ao processar CSV: {str(e)}'
-    
-    model_info = get_model_info()
-    
-    return render(request, 'store/batch_test.html', {
+                error = f"Erro ao ler CSV: {str(e)}"
+                return render(request, 'store/batch_test.html', {'error': error})
+            
+            # Remover linhas vazias ou incompletas
+            data = [row for row in data if row and len(row) > 0]
+            
+            if not data:
+                error = "Nenhum dado válido encontrado no CSV"
+                return render(request, 'store/batch_test.html', {'error': error})
+            
+            # Aplicar porcentagem
+            if percentage < 100:
+                sample_size = max(1, int(len(data) * percentage / 100))
+                data = random.sample(data, sample_size)
+            
+            if not data:
+                error = "Nenhum dado para processar após aplicar a porcentagem"
+                return render(request, 'store/batch_test.html', {'error': error})
+            
+            # Processar predições
+            
+            results = process_batch_predictions(data, percentage)
+            
+        except ValueError as e:
+            error = f"Erro ao processar CSV: {str(e)}"
+        except Exception as e:
+            error = f"Erro inesperado: {str(e)}"
+            import traceback
+            traceback.print_exc()
+
+    context = {
         'results': results,
         'error': error,
-        'model_info': model_info,
-        'cart_count': cart_count
-    })
+    }
+    return render(request, 'store/batch_test.html', context)
 
-# API endpoints
+
 @require_http_methods(["POST"])
 def add_to_cart(request):
-    """Adiciona produto ao carrinho (AJAX)"""
-    try:
-        data = json.loads(request.body)
-        product_id = data.get('product_id')
-        quantity = int(data.get('quantity', 1))
-        
-        # Encontrar produto
-        product = next((p for p in PRODUCTS if p['id'] == product_id), None)
-        if not product:
-            return JsonResponse({'error': 'Produto não encontrado'}, status=404)
-        
-        # Adicionar ao carrinho
-        cart = get_cart(request)
-        existing = next((item for item in cart if item['product_id'] == product_id), None)
-        
-        if existing:
-            existing['quantity'] += quantity
-        else:
-            cart.append({
-                'product_id': product_id,
-                'name': product['name'],
-                'price': product['price'],
-                'quantity': quantity
-            })
-        
-        save_cart(request, cart)
-        
-        return JsonResponse({
-            'success': True,
-            'cart_count': len(cart),
-            'message': f'{product["name"]} adicionado ao carrinho'
+    """API para adicionar ao carrinho"""
+    
+    data = json.loads(request.body)
+    product_id = data.get('product_id')
+    quantity = int(data.get('quantity', 1))
+
+    
+    product = next((p for p in PRODUCTS if p['id'] == product_id), None)
+    if not product:
+        return JsonResponse({'success': False, 'error': 'Produto não encontrado'})
+    
+    cart = request.session.get('cart', [])
+    
+    # Verificar se já existe no carrinho
+    existing = next((item for item in cart if item['product_id'] == product_id), None)
+    if existing:
+        existing['quantity'] += quantity
+    else:
+        cart.append({
+            'product_id': product_id,
+            'name': product['name'],
+            'category': product['category'],
+            'price': product['price'],
+            'seller_id': product['seller_id'],
+            'quantity': quantity,
         })
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+    
+    request.session['cart'] = cart
+    request.session.modified = True
+    
+    return JsonResponse({
+        'success': True, 
+        'cart_count': len(cart), 
+        'message': f'{product["name"]} adicionado ao carrinho!',
+    })
+
 
 @require_http_methods(["POST"])
 def remove_from_cart(request):

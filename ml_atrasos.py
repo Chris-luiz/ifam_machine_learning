@@ -175,6 +175,136 @@ orders_df['mesmo_estado'] = (
 
 orders_df['fluxo_logistico'] = orders_df['seller_state'] + "_" + orders_df['customer_state']
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+print("Iniciando Data Mining e exportação de gráficos...")
+
+import os
+# Criando uma pasta para organizar as imagens da apresentação
+if not os.path.exists('graficos_apresentacao'):
+    os.makedirs('graficos_apresentacao')
+
+# Configuração visual padrão para os gráficos (padrão de artigo científico/apresentação)
+sns.set_theme(style="whitegrid")
+
+# ------------------------------------------------------------
+# Gráfico 1: O Tamanho do Desbalanceamento (A Realidade do Problema)
+# ------------------------------------------------------------
+plt.figure(figsize=(8, 6))
+ax = sns.countplot(x='atrasou', data=orders_df, palette=['#2ECC71', '#E74C3C'])
+plt.title('Distribuição de Entregas: No Prazo vs Atrasos', fontsize=14, pad=15)
+plt.xlabel('Status de Entrega (0 = No Prazo, 1 = Atrasou)', fontsize=12)
+plt.ylabel('Quantidade de Pedidos', fontsize=12)
+
+# Adicionando os números e porcentagens em cima das barras
+total = len(orders_df)
+for p in ax.patches:
+    height = p.get_height()
+    ax.text(p.get_x() + p.get_width()/2., height + 500,
+            f'{height}\n({(height/total)*100:.1f}%)',
+            ha="center", fontsize=11, fontweight='bold')
+
+plt.savefig('graficos_apresentacao/01_desbalanceamento_classes.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# ------------------------------------------------------------
+# Gráfico 2: A Relação Crucial entre Distância (KM) e Atrasos
+# ------------------------------------------------------------
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='atrasou', y='distancia_km', data=orders_df, palette=['#2ECC71', '#E74C3C'], showfliers=False)
+plt.title('Impacto da Distância Geográfica nos Atrasos', fontsize=14, pad=15)
+plt.xlabel('Status de Entrega (0 = No Prazo, 1 = Atrasou)', fontsize=12)
+plt.ylabel('Distância Geodésica (KM)', fontsize=12)
+plt.savefig('graficos_apresentacao/02_impacto_distancia_km.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# ------------------------------------------------------------
+# Gráfico 3: Taxa de Atraso por Estado de Destino (Os piores estados)
+# ------------------------------------------------------------
+plt.figure(figsize=(14, 6))
+# Calculando a porcentagem de atraso por estado
+estado_atraso = orders_df.groupby('customer_state')['atrasou'].mean().sort_values(ascending=False).reset_index()
+
+sns.barplot(x='customer_state', y='atrasou', data=estado_atraso, palette='rocket')
+plt.title('Taxa de Atrasos por Estado de Destino do Cliente', fontsize=14, pad=15)
+plt.xlabel('Estado do Cliente (UF)', fontsize=12)
+plt.ylabel('Taxa de Atraso (%)', fontsize=12)
+# Transformando o eixo Y em porcentagem visualmente
+import matplotlib.ticker as mtick
+plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+plt.savefig('graficos_apresentacao/03_atrasos_por_estado_destino.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# ------------------------------------------------------------
+# Gráfico 4: Sazonalidade - Quais meses mais atrasam? (Efeito Black Friday/Natal)
+# ------------------------------------------------------------
+plt.figure(figsize=(12, 6))
+mes_atraso = orders_df.groupby('mes_compra')['atrasou'].mean().reset_index()
+
+sns.lineplot(x='mes_compra', y='atrasou', data=mes_atraso, marker='o', color='#E67E22', linewidth=2.5, markersize=8)
+plt.title('Sazonalidade: Taxa de Atraso ao longo dos Meses', fontsize=14, pad=15)
+plt.xlabel('Mês da Compra', fontsize=12)
+plt.ylabel('Taxa de Atraso (%)', fontsize=12)
+plt.xticks(range(1, 13), ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'])
+plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.savefig('graficos_apresentacao/04_sazonalidade_meses.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+# ------------------------------------------------------------
+# Gráfico 5: O Benefício Logístico de Comprar no "Mesmo Estado"
+# ------------------------------------------------------------
+plt.figure(figsize=(8, 6))
+mesmo_estado_atraso = orders_df.groupby('mesmo_estado')['atrasou'].mean().reset_index()
+mesmo_estado_atraso['Tipo de Envio'] = mesmo_estado_atraso['mesmo_estado'].map({0: 'Interestadual (Estados Diferentes)', 1: 'Local (Mesmo Estado)'})
+
+ax = sns.barplot(x='Tipo de Envio', y='atrasou', data=mesmo_estado_atraso, palette='mako')
+plt.title('Impacto do Fluxo Logístico: Local vs Interestadual', fontsize=14, pad=15)
+plt.xlabel('', fontsize=12)
+plt.ylabel('Taxa de Atraso (%)', fontsize=12)
+plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+
+# Adicionando as porcentagens exatas nas barras
+for p in ax.patches:
+    ax.annotate(f"{p.get_height()*100:.1f}%", 
+                (p.get_x() + p.get_width() / 2., p.get_height()), 
+                ha='center', va='center', fontsize=12, fontweight='bold', color='black', xytext=(0, 10), 
+                textcoords='offset points')
+
+plt.savefig('graficos_apresentacao/05_impacto_mesmo_estado.png', dpi=300, bbox_inches='tight')
+plt.close()
+
+print("-> Todos os gráficos foram salvos na pasta 'graficos_apresentacao/'.")
+
+exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
 # --- One-hot encoding de estados e fluxo ---
 orders_df = pd.get_dummies(orders_df, columns=['fluxo_logistico'], dtype=int, drop_first=True)
 orders_df = pd.get_dummies(orders_df, columns=['customer_state'], dtype=int)
